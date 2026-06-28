@@ -23,7 +23,8 @@ export class LoginUserUseCase {
 
     const accessToken = await this.tokenGenerator.generateAccessToken({
       sub: user.id,
-      email: user.email
+      email: user.email,
+      type: 'access',
     });
 
     return accessToken;
