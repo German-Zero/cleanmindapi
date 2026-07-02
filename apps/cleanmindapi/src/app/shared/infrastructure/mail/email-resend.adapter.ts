@@ -17,24 +17,14 @@ export class ResendMailAdapter implements MailPort {
 
   async sendVerificationEmail(
     email: string,
-    token: string,
+    code: string,
   ): Promise<void> {
-    const frontend =
-      this.config.getOrThrow<string>('auth.frontend.url');
-
-    const url = `${frontend}/auth/verify?token=${token}`;
-    try {
-
-      const result = await this.resend.emails.send({
+    await this.resend.emails.send({
         from: this.config.getOrThrow<string>('auth.mail.from'),
         to: email,
         subject: 'Verify your email',
-        html: this.verificationTemplate(url),
-      });
-      console.log('Verification email sent:', result);
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-    }
+        html: this.verificationTemplate(code),
+    });
   }
 
   async sendResetPasswordEmail(
@@ -56,22 +46,31 @@ export class ResendMailAdapter implements MailPort {
   }
 
   private verificationTemplate(
-    url: string,
+    code: string,
   ): string {
     return `
       <h2>Welcome to CleanMind</h2>
 
       <p>
-        Thank you for creating an account.
+        Thank you for creating your account.
       </p>
 
       <p>
-        Click the button below to verify your email.
+        Your verification code is:
       </p>
 
-      <a href="${url}">
-        Verify Email
-      </a>
+      <h1
+        style="
+          letter-spacing:8px;
+          font-size:36px;
+        "
+      >
+        ${code}
+      </h1>
+
+      <p>
+        This code expires in 24 hours.
+      </p>
     `;
   }
 

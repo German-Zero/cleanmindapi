@@ -18,7 +18,7 @@ export class VerifyEmailUseCase implements VerifyEmailPort
     command: VerifyEmailCommand,
   ): Promise<void> {
     const tokenHash =
-      await this.tokenHasher.hash(command.token);
+      await this.tokenHasher.hash(command.code);
 
     const verificationToken =
       await this.verificationTokenRepository.findByHash(

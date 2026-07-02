@@ -162,7 +162,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyEmail(@Body() request: VerifyEmailRequest): Promise<void> {
-    await this.verifyEmailPort.execute(new VerifyEmailCommand(request.token));
+    await this.verifyEmailPort.execute(new VerifyEmailCommand(request.code));
   }
 
   @Post('forgot-password')
