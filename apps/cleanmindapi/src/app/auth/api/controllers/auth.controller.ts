@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
 import { RegisterRequest } from "../requests/register.request";
 import { RegisterUserCommand } from "../../application/commands/register-user.command";
 import { Public } from "../../../shared/security/decorators/public.decorator";
@@ -33,6 +33,9 @@ import { LogoutUserUseCase } from "../../application/use-cases/logout-user.useca
 import { AuthResponse } from "../response/auth-response";
 import { CurrentUserResponse } from "../response/current-user.response";
 import { JwtAuthGuard } from "../../../shared/security/guards/jwt-auth.guard";
+import { ChangePasswordUseCase } from "../../application/use-cases/change-password.usecase";
+import { ChangePasswordRequest } from "../requests/change-password.request";
+import { ChangePasswordCommand } from "../../application/commands/change-password.command";
 
 
 @Controller('auth')
@@ -48,6 +51,7 @@ export class AuthController {
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly loginGoogleUseCase: LoginGoogleUseCase,
     private readonly cookieService: CookieService,
+    private readonly changePasswordUseCase: ChangePasswordUseCase
   ) {}
 
   @Post('register')
@@ -190,6 +194,23 @@ export class AuthController {
         request.password,
       ),
     );
+  }
+
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() req: ChangePasswordRequest
+  ): Promise<void> {
+    await this.changePasswordUseCase.execute(
+      new ChangePasswordCommand(
+        user.sub,
+        req.currentPassword,
+        req.newPassword,
+        req.confirmPassword
+      )
+    )
   }
 
   @Get('google')

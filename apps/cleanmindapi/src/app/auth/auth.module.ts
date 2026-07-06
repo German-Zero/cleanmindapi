@@ -53,6 +53,8 @@ import { VerificationTokenRepository } from "./domain/repositories/verification-
 import { GoogleAuthGuard } from "./api/guards/google-auth.guard";
 import { GoogleStrategy } from "./infrastructure/strategies/google.strategy";
 import { CookieService } from "../shared/application/services/cookie.service";
+import { ChangePasswordUseCase } from "./application/use-cases/change-password.usecase";
+import { ChangePasswordPort } from "./application/ports/inbound/change-password.port";
 
 
 @Module({
@@ -83,6 +85,12 @@ import { CookieService } from "../shared/application/services/cookie.service";
     GoogleStrategy,
 
     // Use-Cases
+
+    ChangePasswordUseCase,
+    {
+      provide: ChangePasswordPort,
+      useExisting: ChangePasswordUseCase,
+    },
 
     LoginGoogleUseCase,
     {
