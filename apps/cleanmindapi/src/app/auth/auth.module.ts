@@ -17,6 +17,8 @@ import { ForgotPasswordUseCase } from "./application/use-cases/forgot-password.u
 import { ResetPasswordUseCase } from "./application/use-cases/reset-password.usecase";
 import { LoginGoogleUseCase } from "./application/use-cases/login-google.usecase";
 import { VerifyEmailUseCase } from "./application/use-cases/verify-email.usecase";
+import { ChangePasswordUseCase } from "./application/use-cases/change-password.usecase";
+import { SetPasswordUseCase } from "./application/use-cases/set-password.usecase";
 
 import { PrismaUserRepository } from "../users/infrastructure/repositories/prisma-user.repository";
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
@@ -45,6 +47,8 @@ import { JwtPort } from "./application/ports/outbound/jwt.port";
 import { MailPort } from "./application/ports/outbound/mail.port";
 import { ForgotPasswordPort } from "./application/ports/inbound/forgot-password.port";
 import { VerifyEmailPort } from "./application/ports/inbound/verify-email.port";
+import { ChangePasswordPort } from "./application/ports/inbound/change-password.port";
+import { SetPasswordPort } from "./application/ports/inbound/set-password.port";
 
 import { UserRepository } from "../users/domain/repositories/user.repository";
 import { RefreshTokenRepository } from "./domain/repositories/refresh-token.repository";
@@ -53,8 +57,6 @@ import { VerificationTokenRepository } from "./domain/repositories/verification-
 import { GoogleAuthGuard } from "./api/guards/google-auth.guard";
 import { GoogleStrategy } from "./infrastructure/strategies/google.strategy";
 import { CookieService } from "../shared/application/services/cookie.service";
-import { ChangePasswordUseCase } from "./application/use-cases/change-password.usecase";
-import { ChangePasswordPort } from "./application/ports/inbound/change-password.port";
 
 
 @Module({
@@ -85,6 +87,12 @@ import { ChangePasswordPort } from "./application/ports/inbound/change-password.
     GoogleStrategy,
 
     // Use-Cases
+
+    SetPasswordUseCase,
+    {
+      provide: SetPasswordPort,
+      useExisting: SetPasswordUseCase,
+    },
 
     ChangePasswordUseCase,
     {

@@ -36,6 +36,9 @@ import { JwtAuthGuard } from "../../../shared/security/guards/jwt-auth.guard";
 import { ChangePasswordUseCase } from "../../application/use-cases/change-password.usecase";
 import { ChangePasswordRequest } from "../requests/change-password.request";
 import { ChangePasswordCommand } from "../../application/commands/change-password.command";
+import { SetPasswordRequest } from "../requests/set-password.request";
+import { SetPasswordCommand } from "../../application/commands/set-password.command";
+import { SetPasswordUseCase } from "../../application/use-cases/set-password.usecase";
 
 
 @Controller('auth')
@@ -51,7 +54,8 @@ export class AuthController {
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly loginGoogleUseCase: LoginGoogleUseCase,
     private readonly cookieService: CookieService,
-    private readonly changePasswordUseCase: ChangePasswordUseCase
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly setPasswordUseCase: SetPasswordUseCase,
   ) {}
 
   @Post('register')
@@ -211,6 +215,20 @@ export class AuthController {
         req.confirmPassword
       )
     )
+  }
+
+  @Patch('set-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async setPassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() req: SetPasswordRequest,
+  ): Promise<void> {
+    await this.setPasswordUseCase.execute(new SetPasswordCommand(
+      user.sub,
+      req.password,
+      req.confirmPassword,
+    ))
   }
 
   @Get('google')
