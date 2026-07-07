@@ -67,13 +67,13 @@ export class RegisterUserUseCase implements RegisterUserPort {
 
     await this.refreshTokenRepository.create(refreshToken);
 
-    const verificationToken = this.tokenGenerator.generate()
+    const code = this.tokenGenerator.generate()
 
-    const verificationTokenHash = await this.tokenHasher.hash(verificationToken);
+    const codeHash = await this.tokenHasher.hash(code);
 
     const verification =
       VerificationToken.create({
-        tokenHash: verificationTokenHash,
+        tokenHash: codeHash,
         userId: createdUser.id,
         expiresAt: new Date(
           Date.now() + 1000 * 60 * 60 * 24,
@@ -86,7 +86,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
 
     await this.mail.sendVerificationEmail(
       createdUser.email.getValue(),
-      verificationToken,
+      code,
     );
 
     return AuthResponseMapper.toResponse(
