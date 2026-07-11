@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { SharedModule } from './shared/shared.module';
 import { ConfigModule } from '@nestjs/config';
 import config from './shared/infrastructure/config';
+import { TaskModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import config from './shared/infrastructure/config';
     UsersModule,
     AuthModule,
     SharedModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],
