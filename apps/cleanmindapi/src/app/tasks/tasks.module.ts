@@ -109,6 +109,6 @@ import { UserRepository } from "../users/domain/repositories/user.repository";
     },
 
   ],
-  exports: [],
+  exports: [TaskRepository],
 })
 export class TaskModule {}
