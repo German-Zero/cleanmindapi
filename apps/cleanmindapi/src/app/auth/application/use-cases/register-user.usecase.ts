@@ -17,6 +17,8 @@ import { User } from "../../../users/domain/entities/user.entity";
 import { RefreshToken } from "../../domain/entities/refresh-token.entity";
 import { VerificationToken } from "../../domain/entities/verification-token.entity";
 import { AuthResponseMapper } from "../../api/mapper/auth-response.mapper";
+import { UserSettingsRepository } from "../../../settings/domain/repositories/user-settings.repository";
+import { UserSettings } from "../../../settings/domain/entities/user-settings.entity";
 
 
 @Injectable()
@@ -31,6 +33,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
     private readonly mail: MailPort,
     private readonly tokenHasher: TokenHasherPort,
     private readonly verificationTokenRepository: VerificationTokenRepository,
+    private readonly userSettingsRepository: UserSettingsRepository,
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<AuthResponse> {
@@ -50,6 +53,10 @@ export class RegisterUserUseCase implements RegisterUserPort {
     })
 
     const createdUser = await this.userRepository.create(user);
+
+    const settings = UserSettings.createDefault(createdUser.id)
+
+    await this.userSettingsRepository.create(settings)
 
     const tokens = await this.jwt.generateTokens(createdUser)
 

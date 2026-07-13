@@ -9,6 +9,7 @@ import { SharedModule } from './shared/shared.module';
 import { ConfigModule } from '@nestjs/config';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TaskModule } from './tasks/tasks.module';
+import { SettingsModule } from './settings/settings.module';
 
 import config from './shared/infrastructure/config';
 
@@ -23,6 +24,7 @@ import config from './shared/infrastructure/config';
     UsersModule,
     AuthModule,
     SharedModule,
+    SettingsModule,
     TaskModule,
     DashboardModule,
   ],

@@ -1,0 +1,5 @@
+export enum Theme {
+  LUNAR_MIND = 'LUNAR_MIND',
+  DEEP_SERENITY = 'DEEP_SERENITY',
+  CALM_TECH = 'CALM_TECH'
+}

@@ -4,6 +4,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { MailModule } from "../shared/infrastructure/mail/mail.module";
 import { PrismaModule } from "../shared/infrastructure/prisma/prisma.module";
 import { UsersModule } from "../users/users.module";
+import { SettingsModule } from "../settings/settings.module";
 import { ConfigService } from "@nestjs/config";
 
 import { AuthController } from "./api/controllers/auth.controller";
@@ -64,6 +65,7 @@ import { CookieService } from "../shared/application/services/cookie.service";
     UsersModule,
     PrismaModule,
     MailModule,
+    SettingsModule,
     JwtModule.registerAsync({
         inject: [ConfigService],
 

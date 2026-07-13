@@ -9,6 +9,8 @@ import { Email } from "../../../users/domain/value-objects/email.vo";
 import { User } from "../../../users/domain/entities/user.entity";
 import { RefreshToken } from "../../domain/entities/refresh-token.entity";
 import { AuthResponse } from "../../api/response/auth-response";
+import { UserSettingsRepository } from "../../../settings/domain/repositories/user-settings.repository";
+import { UserSettings } from "../../../settings/domain/entities/user-settings.entity";
 
 @Injectable()
 export class LoginGoogleUseCase
@@ -19,6 +21,7 @@ export class LoginGoogleUseCase
     private readonly jwtPort: JwtPort,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly tokenHasher: TokenHasherPort,
+    private readonly userSettingsRepository: UserSettingsRepository,
   ) {}
 
   async execute(
@@ -38,6 +41,10 @@ export class LoginGoogleUseCase
 
       user = await this.userRepository.create(user);
     }
+
+    const settings = UserSettings.createDefault(user.id)
+
+    await this.userSettingsRepository.create(settings)
 
     const tokens =
       await this.jwtPort.generateTokens(user);
