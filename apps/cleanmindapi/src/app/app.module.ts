@@ -12,6 +12,7 @@ import { TaskModule } from './tasks/tasks.module';
 import { SettingsModule } from './settings/settings.module';
 
 import config from './shared/infrastructure/config';
+import { NotificationModule } from './notifications/notification.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import config from './shared/infrastructure/config';
     SettingsModule,
     TaskModule,
     DashboardModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
