@@ -17,6 +17,9 @@ export default registerAs('auth', () => ({
   mail: {
     apiKey: process.env.RESEND_API_KEY!,
     from: process.env.MAIL_FROM!,
+    appName: process.env.APP_NAME,
+    supportEmail: process.env.SUPPORT_EMAIL,
+    logoUrl: process.env.LOGO_URL,
   },
 
   frontend: {

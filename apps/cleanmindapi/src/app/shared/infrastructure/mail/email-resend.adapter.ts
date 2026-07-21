@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { MailPort } from "../../../auth/application/ports/outbound/mail.port";
 import { Resend } from "resend";
 import { ConfigService } from "@nestjs/config";
+import { HandlebarsService } from '../../mail/helpers/handlebars.service';
+import { MailTemplate } from '../../mail/enums/mail-template.enum';
 
 @Injectable()
 export class ResendMailAdapter implements MailPort {
@@ -9,6 +11,7 @@ export class ResendMailAdapter implements MailPort {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly handlebars: HandlebarsService,
   ) {
     this.resend = new Resend(
       this.config.getOrThrow<string>('auth.mail.apiKey'),
@@ -22,8 +25,11 @@ export class ResendMailAdapter implements MailPort {
     await this.resend.emails.send({
         from: this.config.getOrThrow<string>('auth.mail.from'),
         to: email,
-        subject: 'Verify your email',
-        html: this.verificationTemplate(code),
+        subject: 'Verifica tu correo electrónico',
+        html: this.handlebars.renderEmail(MailTemplate.VERIFY_EMAIL, {
+          verificationCode: code,
+          expirationHours: 24,
+        }),
     });
   }
 
@@ -40,57 +46,11 @@ export class ResendMailAdapter implements MailPort {
     await this.resend.emails.send({
       from: this.config.get<string>('auth.mail.from')!,
       to: email,
-      subject: 'Reset your password',
-      html: this.resetPasswordTemplate(url),
+      subject: 'Restablece tu contraseña',
+      html: this.handlebars.renderEmail(MailTemplate.PASSWORD_RESET, {
+        resetUrl: url,
+        expirationMinutes: 30,
+      }),
     });
-  }
-
-  private verificationTemplate(
-    code: string,
-  ): string {
-    return `
-      <h2>Welcome to CleanMind</h2>
-
-      <p>
-        Thank you for creating your account.
-      </p>
-
-      <p>
-        Your verification code is:
-      </p>
-
-      <h1
-        style="
-          letter-spacing:8px;
-          font-size:36px;
-        "
-      >
-        ${code}
-      </h1>
-
-      <p>
-        This code expires in 24 hours.
-      </p>
-    `;
-  }
-
-  private resetPasswordTemplate(
-    url: string,
-  ): string {
-    return `
-      <h2>Password Recovery</h2>
-
-      <p>
-        We received a request to reset your password.
-      </p>
-
-      <p>
-        Click the button below.
-      </p>
-
-      <a href="${url}">
-        Reset Password
-      </a>
-    `;
   }
 }
