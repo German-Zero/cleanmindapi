@@ -52,6 +52,48 @@ Apply the database migration before using the connection flow:
 npx prisma migrate deploy
 ```
 
+## Multi-factor authentication
+
+MFA uses RFC 6238 TOTP applications (Google Authenticator, Microsoft Authenticator, 1Password, and compatible apps) plus ten single-use recovery codes. TOTP secrets are encrypted with AES-256-GCM before persistence.
+
+Generate the required 32-byte encryption key once:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Store the result outside the repository:
+
+```env
+MFA_ENCRYPTION_KEY=base64-encoded-32-byte-key
+MFA_ISSUER=CleanMind
+MFA_CHALLENGE_EXPIRES_IN_SECONDS=300
+MFA_MAX_ATTEMPTS=5
+MFA_SETUP_MAX_AUTH_AGE_SECONDS=600
+```
+
+Do not rotate `MFA_ENCRYPTION_KEY` without first re-encrypting existing authenticator secrets. Losing this key makes existing TOTP enrollments unusable.
+
+Enrollment API flow:
+
+1. `GET /api/auth/mfa/status`
+2. `POST /api/auth/mfa/setup` requires a login performed within the configured maximum age, then returns the Base32 secret and `otpauthUri`; render the URI as a QR code in the frontend.
+3. `POST /api/auth/mfa/enable` with `{ "code": "123456" }` returns ten recovery codes once and revokes existing refresh sessions.
+4. `POST /api/auth/mfa/recovery-codes` rotates recovery codes after a valid TOTP or recovery code.
+5. `POST /api/auth/mfa/disable` disables MFA after a valid TOTP or recovery code and revokes existing refresh sessions.
+
+When MFA is enabled, local and Google login return this instead of creating a session:
+
+```json
+{
+  "mfaRequired": true,
+  "challengeToken": "one-use-token",
+  "expiresIn": 300
+}
+```
+
+Complete login with `POST /api/auth/mfa/verify` and `{ "challengeToken": "...", "code": "123456" }`. A valid response creates the normal access and refresh cookies. Challenges are single-use and limited to the configured number of attempts.
+
 To create a production bundle:
 
 ```sh
