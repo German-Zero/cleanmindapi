@@ -32,6 +32,8 @@ export class DashboardResponseMapper {
       upcoming: TaskResponseMapper.toResponseList(
         model.upcoming,
       ),
+
+      pomodoro: model.pomodoro,
     };
   }
 }

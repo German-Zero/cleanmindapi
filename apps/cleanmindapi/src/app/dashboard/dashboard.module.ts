@@ -8,10 +8,12 @@ import { DashboardBuilderService } from "./application/services/dashboard-builde
 import { GetDashboardUseCase } from "./application/use-cases/get-dashboard.usecase";
 
 import { GetDashboardPort } from "./application/ports/inbound/get-dashboard.port";
+import { PomodoroModule } from "../pomodoro/pomodoro.module";
 
 @Module({
   imports: [
     TaskModule,
+    PomodoroModule,
   ],
   controllers: [
     DashboardController

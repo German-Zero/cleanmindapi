@@ -94,6 +94,53 @@ When MFA is enabled, local and Google login return this instead of creating a se
 
 Complete login with `POST /api/auth/mfa/verify` and `{ "challengeToken": "...", "code": "123456" }`. A valid response creates the normal access and refresh cookies. Challenges are single-use and limited to the configured number of attempts.
 
+## Pomodoro API
+
+The authenticated Pomodoro API keeps the timer state associated with the current user while the visible countdown remains a frontend responsibility.
+
+Available endpoints:
+
+```text
+GET   /api/pomodoro/settings
+PATCH /api/pomodoro/settings
+POST  /api/pomodoro/sessions
+GET   /api/pomodoro/sessions/active
+PATCH /api/pomodoro/sessions/:id/complete
+PATCH /api/pomodoro/sessions/:id/interrupt
+PATCH /api/pomodoro/sessions/:id/cancel
+GET   /api/pomodoro/summary?days=7
+```
+
+Start a session with an optional owned task and break type:
+
+```json
+{
+  "taskId": "optional-task-uuid",
+  "breakType": "SHORT"
+}
+```
+
+The response contains `startedAt`, `plannedFocusSeconds`, and `plannedBreakSeconds`. The frontend should persist that response and calculate the countdown from timestamps so background tabs do not make the timer drift. Complete or interrupt the session with the measured durations:
+
+```json
+{
+  "actualFocusSeconds": 1500,
+  "actualBreakSeconds": 300
+}
+```
+
+Only one active session is allowed per user. Dashboard responses include a small `pomodoro` summary with today's focused seconds, break seconds, and completed sessions. The API deliberately avoids streaks, rankings, and productivity scores.
+
+## Browser access and CORS
+
+Direct browser requests are allowed only from configured origins and may include authentication cookies:
+
+```env
+CORS_ORIGINS=http://localhost:3001
+```
+
+Use a comma-separated list in deployed environments, without trailing slashes. The frontend development proxy avoids cross-origin requests, but CORS remains available for direct API access.
+
 To create a production bundle:
 
 ```sh

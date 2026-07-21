@@ -13,6 +13,7 @@ import { SettingsModule } from './settings/settings.module';
 
 import config from './shared/infrastructure/config';
 import { NotificationModule } from './notifications/notification.module';
+import { PomodoroModule } from './pomodoro/pomodoro.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { NotificationModule } from './notifications/notification.module';
     TaskModule,
     DashboardModule,
     NotificationModule,
+    PomodoroModule,
   ],
   controllers: [AppController],
   providers: [AppService],
