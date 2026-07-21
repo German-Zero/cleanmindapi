@@ -40,8 +40,38 @@ model User {
   passwordResetTokens PasswordResetToken[]
   tasks               Task[]
   userSettings        UserSettings?
+  discordConnection   DiscordConnection?
+  discordOAuthStates  DiscordOAuthState[]
 
   @@map("users")
+}
+
+model DiscordConnection {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  discordUserId String   @unique
+  username      String
+  globalName    String?
+  avatarHash    String?
+  connectedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("discord_connections")
+}
+
+model DiscordOAuthState {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("discord_oauth_states")
 }
 
 model RefreshToken {

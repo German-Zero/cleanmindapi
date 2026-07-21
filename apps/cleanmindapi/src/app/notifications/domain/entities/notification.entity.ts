@@ -1,42 +1,54 @@
-import { NotificationType } from "../enums/notification-type.enum";
+import { NotificationType } from '../enums/notification-type.enum';
+import { NotificationPayloadMap } from '../models/notification-payload.model';
 
-interface NotificationProps {
+interface NotificationProps<
+  T extends NotificationType,
+> {
   recipient: string;
-  title: string;
-  message: string;
-  type: NotificationType
+
+  type: T;
+
+  payload: NotificationPayloadMap[T];
 }
 
-export class Notification {
+export class Notification<
+  T extends NotificationType =
+    NotificationType,
+> {
   private readonly _recipient: string;
-  private readonly _title: string;
-  private readonly _message: string;
-  private readonly _type: NotificationType;
 
-  private constructor(props: NotificationProps) {
+  private readonly _type: T;
+
+  private readonly _payload:
+    NotificationPayloadMap[T];
+
+  private constructor(
+    props: NotificationProps<T>,
+  ) {
     this._recipient = props.recipient;
-    this._title = props.title;
-    this._message = props.message;
     this._type = props.type;
+    this._payload = props.payload;
   }
 
-  static create(props: NotificationProps): Notification {
-    return new Notification(props)
+  static create<
+    T extends NotificationType,
+  >(
+    props: NotificationProps<T>,
+  ): Notification<T> {
+    return new Notification(props);
   }
 
   get recipient(): string {
     return this._recipient;
   }
 
-  get title(): string {
-    return this._title;
-  }
-
-  get message(): string {
-    return this._message;
-  }
-
-  get type(): NotificationType {
+  get type(): T {
     return this._type;
+  }
+
+  get payload(): Readonly<
+    NotificationPayloadMap[T]
+  > {
+    return this._payload;
   }
 }

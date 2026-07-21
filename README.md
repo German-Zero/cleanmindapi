@@ -14,6 +14,44 @@ To run the dev server for your app, use:
 npx nx serve cleanmindapi
 ```
 
+## Discord notifications
+
+CleanMind uses two independent Discord integrations:
+
+- A bot sends personal notifications by direct message after the user connects their Discord account through OAuth2.
+- An incoming webhook posts operational server messages to a private Discord channel.
+
+Create an application in the Discord Developer Portal, add a bot, install it in the CleanMind server, and configure:
+
+```env
+DISCORD_CLIENT_ID=application-id
+DISCORD_CLIENT_SECRET=oauth-client-secret
+DISCORD_BOT_TOKEN=bot-token
+DISCORD_REDIRECT_URI=http://localhost:3000/api/notifications/discord/callback
+DISCORD_OAUTH_SUCCESS_URL=http://localhost:3001/settings
+
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/id/token
+DISCORD_WEBHOOK_USERNAME=CleanMind
+DISCORD_WEBHOOK_AVATAR_URL=
+DISCORD_WEBHOOK_TIMEOUT_MS=5000
+```
+
+The redirect URI must match the URI configured under OAuth2 in the Discord Developer Portal. Never expose the bot token, client secret, or webhook URL to the frontend.
+
+Authenticated API flow:
+
+1. `POST /api/notifications/discord/connection` returns the Discord authorization URL.
+2. Redirect the browser to that URL. Discord returns to the configured callback and links the verified Discord user.
+3. `GET /api/notifications/discord/connection` returns the connection status.
+4. `POST /api/notifications/discord/test` sends a test direct message.
+5. `DELETE /api/notifications/discord/connection` disconnects the account.
+
+Apply the database migration before using the connection flow:
+
+```sh
+npx prisma migrate deploy
+```
+
 To create a production bundle:
 
 ```sh

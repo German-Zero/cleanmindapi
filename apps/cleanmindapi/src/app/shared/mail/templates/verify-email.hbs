@@ -1,0 +1,15 @@
+<h1>Verifica tu correo electrónico</h1>
+<p>Gracias por crear tu cuenta en {{appName}}.</p>
+
+{{#if verificationCode}}
+<p>Usa este código para completar la verificación:</p>
+<p class="verification-code">{{verificationCode}}</p>
+{{/if}}
+
+{{#if verificationUrl}}
+<p>Confirma tu dirección desde el siguiente enlace:</p>
+{{> button label="Verificar correo" url=verificationUrl buttonColor=primaryColor}}
+<p class="fallback-link">{{verificationUrl}}</p>
+{{/if}}
+
+<p class="muted">La verificación vence en {{expirationHours}} horas. Si no creaste esta cuenta, puedes ignorar este mensaje.</p>

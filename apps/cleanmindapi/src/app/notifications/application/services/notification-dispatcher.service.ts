@@ -33,7 +33,7 @@ export class NotificationDispatcherService {
       enabledChannels.includes(sender.channel))
       .map(async sender => {
         try {
-          await sender.send(notification)
+          await sender.send(userId, notification)
         } catch (error) {
           this.logger.error(`failed sending notification through ${sender.channel}`,
             error instanceof Error

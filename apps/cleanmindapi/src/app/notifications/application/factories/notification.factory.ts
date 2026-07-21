@@ -4,38 +4,34 @@ import { NotificationType } from "../../domain/enums/notification-type.enum";
 
 @Injectable()
 export class NotificationFactory {
-  buildTaskReminder( recipient: string, taskTitle: string ): Notification {
+  buildTaskReminder( recipient: string, taskTitle: string, dueDate: Date ): Notification {
     return Notification.create({
       recipient,
-      title: 'Task Reminder',
-      message: `Don't forget to complete "${taskTitle}".`,
+      payload: { taskTitle, dueDate},
       type: NotificationType.TASK_REMINDER,
     });
   }
 
-  buildTaskOverdue( recipient: string, taskTitle: string ): Notification {
+  buildTaskOverdue( recipient: string, taskTitle: string, dueDate: Date ): Notification {
     return Notification.create({
       recipient,
-      title: 'Task Overdue',
-      message: `"${taskTitle}" is overdue.`,
+      payload: { taskTitle, dueDate},
       type: NotificationType.TASK_OVERDUE,
     });
   }
 
-  buildTaskCompleted( recipient: string,taskTitle: string ): Notification {
+  buildTaskCompleted( recipient: string, taskTitle: string ): Notification {
     return Notification.create({
       recipient,
-      title: 'Task Completed',
-      message: `Great job! You completed "${taskTitle}".`,
+      payload: { taskTitle, completedAt: new Date() },
       type: NotificationType.TASK_COMPLETED,
     });
   }
 
-  buildMotivational( recipient: string,message: string ): Notification {
+  buildMotivational( recipient: string, quote: string ): Notification {
     return Notification.create({
       recipient,
-      title: 'CleanMind',
-      message,
+      payload: { quote },
       type: NotificationType.MOTIVATIONAL,
     });
   }
@@ -43,8 +39,7 @@ export class NotificationFactory {
   buildVerifyEmail( recipient: string,verificationUrl: string ): Notification {
     return Notification.create({
       recipient,
-      title: 'Verify your email',
-      message: verificationUrl,
+      payload: { verificationUrl, },
       type: NotificationType.VERIFY_EMAIL,
     });
   }
@@ -52,8 +47,7 @@ export class NotificationFactory {
   buildPasswordReset( recipient: string,resetUrl: string ): Notification {
     return Notification.create({
       recipient,
-      title: 'Reset your password',
-      message: resetUrl,
+      payload: { resetUrl },
       type: NotificationType.PASSWORD_RESET,
     });
   }

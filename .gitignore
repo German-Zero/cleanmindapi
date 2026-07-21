@@ -48,3 +48,9 @@ Thumbs.db
 .env
 
 /generated/prisma
+
+# Local Graphify knowledge graph artifacts
+/graphify-out/
+
+# Local project context
+/.context/

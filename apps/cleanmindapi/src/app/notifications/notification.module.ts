@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 
 import { ConfigModule } from "@nestjs/config";
 import { SettingsModule } from "../settings/settings.module";
+import { SharedMailModule } from '../shared/mail/shared-mail.module';
 
 import { NOTIFICATION_SENDERS } from "./application/common/notification.constants";
 
@@ -14,19 +15,38 @@ import { NotificationDispatcherService } from "./application/services/notificati
 import { NotificationSenderPort } from "./application/ports/outbound/notification-sender.port";
 
 import { NotificationFactory } from "./application/factories/notification.factory";
+import { NotificationTemplateService } from './infrastructure/templates/notification-template.service';
+import { DiscordConnectionController } from './api/controllers/discord-connection.controller';
+import { DiscordConnectionService } from './application/services/discord-connection.service';
+import { DiscordConnectionRepository } from './domain/repositories/discord-connection.repository';
+import { DiscordApiService } from './infrastructure/discord/discord-api.service';
+import { PrismaDiscordConnectionRepository } from './infrastructure/discord/prisma-discord-connection.repository';
+import { DiscordServerWebhookService } from './infrastructure/discord/discord-server-webhook.service';
 
 @Module({
   imports: [
     ConfigModule,
     SettingsModule,
+    SharedMailModule,
   ],
-  controllers: [],
+  controllers: [DiscordConnectionController],
   providers: [
     // Factory
 
     NotificationFactory,
-
-
+    NotificationTemplateService,
+    NotificationDispatcherService,
+    DiscordConnectionService,
+    DiscordApiService,
+    DiscordServerWebhookService,
+    PrismaDiscordConnectionRepository,
+    {
+      provide: DiscordConnectionRepository,
+      useExisting: PrismaDiscordConnectionRepository,
+    },
+    EmailNotificationAdapter,
+    DiscordNotificationAdapter,
+    WhatsappNotificationAdapter,
     {
       provide: NOTIFICATION_SENDERS,
       useFactory: (
@@ -47,6 +67,7 @@ import { NotificationFactory } from "./application/factories/notification.factor
   ],
   exports: [
     NotificationDispatcherService,
+    DiscordServerWebhookService,
   ]
 })
 export class NotificationModule {}
