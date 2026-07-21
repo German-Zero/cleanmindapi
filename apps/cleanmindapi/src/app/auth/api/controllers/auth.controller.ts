@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
 import { RegisterRequest } from "../requests/register.request";
 import { RegisterUserCommand } from "../../application/commands/register-user.command";
 import { Public } from "../../../shared/security/decorators/public.decorator";
@@ -30,7 +30,7 @@ import { RegisterUserUseCase } from "../../application/use-cases/register-user.u
 import { LoginUserUseCase } from "../../application/use-cases/login-user.usecase";
 import { RefreshTokenUseCase } from "../../application/use-cases/refresh-token.usecase";
 import { LogoutUserUseCase } from "../../application/use-cases/logout-user.usecase";
-import { AuthResponse } from "../response/auth-response";
+import { AuthResponse, LoginResponse } from "../response/auth-response";
 import { CurrentUserResponse } from "../response/current-user.response";
 import { JwtAuthGuard } from "../../../shared/security/guards/jwt-auth.guard";
 import { ChangePasswordUseCase } from "../../application/use-cases/change-password.usecase";
@@ -39,6 +39,9 @@ import { ChangePasswordCommand } from "../../application/commands/change-passwor
 import { SetPasswordRequest } from "../requests/set-password.request";
 import { SetPasswordCommand } from "../../application/commands/set-password.command";
 import { SetPasswordUseCase } from "../../application/use-cases/set-password.usecase";
+import { MfaService, MfaSetupResponse, MfaStatusResponse } from '../../application/services/mfa.service';
+import { MfaCodeRequest } from '../requests/mfa-code.request';
+import { VerifyMfaLoginRequest } from '../requests/verify-mfa-login.request';
 
 
 @Controller('auth')
@@ -56,6 +59,7 @@ export class AuthController {
     private readonly cookieService: CookieService,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
     private readonly setPasswordUseCase: SetPasswordUseCase,
+    private readonly mfaService: MfaService,
   ) {}
 
   @Post('register')
@@ -89,12 +93,95 @@ export class AuthController {
     return response;
   }
 
+  @Post('mfa/verify')
+  @Public()
+  @Header('Cache-Control', 'no-store')
+  async verifyMfaLogin(
+    @Body() request: VerifyMfaLoginRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponse> {
+    const response = await this.mfaService.verifyLogin(
+      request.challengeToken,
+      request.code,
+    );
+
+    this.cookieService.setAccessToken(
+      res,
+      response.accessToken,
+      response.expiresIn,
+    );
+    this.cookieService.setRefreshToken(
+      res,
+      response.refreshToken,
+      604800,
+    );
+
+    return response;
+  }
+
+  @Get('mfa/status')
+  @UseGuards(JwtAuthGuard)
+  statusMfa(@CurrentUser() user: JwtPayload): Promise<MfaStatusResponse> {
+    return this.mfaService.status(user.sub);
+  }
+
+  @Post('mfa/setup')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-store')
+  setupMfa(@CurrentUser() user: JwtPayload): Promise<MfaSetupResponse> {
+    return this.mfaService.setup(user.sub, user.authTime);
+  }
+
+  @Post('mfa/enable')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-store')
+  async enableMfa(
+    @CurrentUser() user: JwtPayload,
+    @Body() request: MfaCodeRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ recoveryCodes: string[] }> {
+    const result = {
+      recoveryCodes: await this.mfaService.enable(user.sub, request.code),
+    };
+    this.cookieService.clearTokens(res);
+
+    return result;
+  }
+
+  @Post('mfa/disable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async disableMfa(
+    @CurrentUser() user: JwtPayload,
+    @Body() request: MfaCodeRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.mfaService.disable(user.sub, request.code);
+    this.cookieService.clearTokens(res);
+  }
+
+  @Post('mfa/recovery-codes')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-store')
+  async regenerateMfaRecoveryCodes(
+    @CurrentUser() user: JwtPayload,
+    @Body() request: MfaCodeRequest,
+  ): Promise<{ recoveryCodes: string[] }> {
+    return {
+      recoveryCodes: await this.mfaService.regenerateRecoveryCodes(
+        user.sub,
+        request.code,
+      ),
+    };
+  }
+
   @Post('login')
   @Public()
+  @Header('Cache-Control', 'no-store')
   async login(
     @Body() request: LoginRequest,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
+  ): Promise<LoginResponse> {
 
     const response =
       await this.loginUserUseCase.execute(
@@ -103,6 +190,11 @@ export class AuthController {
           request.password,
         ),
       );
+
+    if ('challengeToken' in response) {
+      this.cookieService.clearTokens(res);
+      return response;
+    }
 
     this.cookieService.setAccessToken(
       res,
@@ -241,10 +333,11 @@ export class AuthController {
   @Get('google/callback')
   @Public()
   @UseGuards(GoogleAuthGuard)
+  @Header('Cache-Control', 'no-store')
   async googleCallback(
     @CurrentUser() user: GoogleUser,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
+  ): Promise<LoginResponse> {
 
     const response =
       await this.loginGoogleUseCase.execute(
@@ -254,6 +347,11 @@ export class AuthController {
           user.avatarUrl,
         ),
       );
+
+    if ('challengeToken' in response) {
+      this.cookieService.clearTokens(res);
+      return response;
+    }
 
     this.cookieService.setAccessToken(
       res,

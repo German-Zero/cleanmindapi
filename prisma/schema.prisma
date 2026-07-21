@@ -42,8 +42,54 @@ model User {
   userSettings        UserSettings?
   discordConnection   DiscordConnection?
   discordOAuthStates  DiscordOAuthState[]
+  mfaAuthenticator    MfaAuthenticator?
+  mfaChallenges       MfaChallenge[]
 
   @@map("users")
+}
+
+model MfaAuthenticator {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  secretEncrypted String
+  enabledAt       DateTime?
+  lastUsedStep    Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recoveryCodes MfaRecoveryCode[]
+
+  @@map("mfa_authenticators")
+}
+
+model MfaRecoveryCode {
+  id              String    @id @default(uuid())
+  authenticatorId String
+  codeHash        String    @unique
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  authenticator MfaAuthenticator @relation(fields: [authenticatorId], references: [id], onDelete: Cascade)
+
+  @@index([authenticatorId])
+  @@map("mfa_recovery_codes")
+}
+
+model MfaChallenge {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique
+  userId     String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  primaryMethod String
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mfa_challenges")
 }
 
 model DiscordConnection {

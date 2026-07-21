@@ -7,6 +7,8 @@ import { GeneratedTokens } from "../../application/common/generated-tokens";
 import { ConfigService } from "@nestjs/config";
 import type { StringValue } from "ms";
 import ms from "ms";
+import { AuthenticationContext } from '../../application/common/authentication-context';
+import { AuthProvider } from '../../../users/domain/enums/auth-provider.enum';
 
 @Injectable()
 export class JwtServiceService implements JwtPort {
@@ -17,6 +19,7 @@ export class JwtServiceService implements JwtPort {
 
 async generateTokens(
   user: User,
+  authenticationContext?: AuthenticationContext,
 ): Promise<GeneratedTokens> {
 
 
@@ -30,10 +33,19 @@ async generateTokens(
     'auth.refreshTokenExpiresIn',
   )!;
 
+  const context = authenticationContext ?? {
+    authTime: Math.floor(Date.now() / 1000),
+    methods: [
+      user.provider === AuthProvider.GOOGLE ? 'google' as const : 'pwd' as const,
+    ],
+  };
+
   const accessPayload: JwtPayload = {
     sub: user.id,
     email: user.email.getValue(),
     role: user.role,
+    authTime: context.authTime,
+    amr: context.methods,
     type: 'access',
   };
 

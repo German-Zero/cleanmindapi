@@ -6,6 +6,7 @@ export class AuthMapper {
     response: ApplicationAuthResponse,
   ): ApiAuthResponse {
     return {
+      mfaRequired: false,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       expiresIn: response.expiresIn,

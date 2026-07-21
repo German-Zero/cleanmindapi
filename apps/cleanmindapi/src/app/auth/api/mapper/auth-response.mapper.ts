@@ -9,6 +9,7 @@ export class AuthResponseMapper {
     tokens: GeneratedTokens,
   ): AuthResponse {
     return {
+      mfaRequired: false,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresIn: tokens.accessTokenExpiresIn,

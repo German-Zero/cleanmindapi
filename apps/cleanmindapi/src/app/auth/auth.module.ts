@@ -25,6 +25,7 @@ import { PrismaUserRepository } from "../users/infrastructure/repositories/prism
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
 import { PrismaVerificationTokenRepository } from "./infrastructure/prisma/repositories/prisma-verification-token.repository";
 import { PrismaPasswordResetTokenRepository } from "./infrastructure/prisma/repositories/prisma-password-reset-token.repository";
+import { PrismaMfaRepository } from './infrastructure/prisma/repositories/prisma-mfa.repository';
 
 
 import { BcryptPasswordHasherService } from "./infrastructure/services/bcrypt-password-hasher.service";
@@ -58,6 +59,11 @@ import { VerificationTokenRepository } from "./domain/repositories/verification-
 import { GoogleAuthGuard } from "./api/guards/google-auth.guard";
 import { GoogleStrategy } from "./infrastructure/strategies/google.strategy";
 import { CookieService } from "../shared/application/services/cookie.service";
+import { MfaRepository } from './domain/repositories/mfa.repository';
+import { MfaService } from './application/services/mfa.service';
+import { SessionIssuerService } from './application/services/session-issuer.service';
+import { TotpService } from './infrastructure/services/totp.service';
+import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret-encryption.service';
 
 
 @Module({
@@ -183,6 +189,12 @@ import { CookieService } from "../shared/application/services/cookie.service";
       useExisting: PrismaVerificationTokenRepository,
     },
 
+    PrismaMfaRepository,
+    {
+      provide: MfaRepository,
+      useExisting: PrismaMfaRepository,
+    },
+
     // Services
 
 
@@ -206,6 +218,10 @@ import { CookieService } from "../shared/application/services/cookie.service";
 
     RefreshTokenValidationService,
     CookieService,
+    TotpService,
+    MfaSecretEncryptionService,
+    SessionIssuerService,
+    MfaService,
 
     // Adapters
 

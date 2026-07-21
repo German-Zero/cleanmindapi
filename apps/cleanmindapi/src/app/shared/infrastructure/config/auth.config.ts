@@ -22,6 +22,18 @@ export default registerAs('auth', () => ({
     logoUrl: process.env.LOGO_URL,
   },
 
+  mfa: {
+    issuer: process.env.MFA_ISSUER ?? 'CleanMind',
+    encryptionKey: process.env.MFA_ENCRYPTION_KEY,
+    challengeExpiresInSeconds: Number(
+      process.env.MFA_CHALLENGE_EXPIRES_IN_SECONDS ?? 300,
+    ),
+    maxAttempts: Number(process.env.MFA_MAX_ATTEMPTS ?? 5),
+    setupMaxAuthAgeSeconds: Number(
+      process.env.MFA_SETUP_MAX_AUTH_AGE_SECONDS ?? 600,
+    ),
+  },
+
   frontend: {
     url: process.env.FRONTEND_URL!,
   },

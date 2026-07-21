@@ -8,6 +8,7 @@ import { AuthResponseMapper } from "../../api/mapper/auth-response.mapper";
 import { RefreshTokenPort } from "../ports/inbound/refresh-token.port";
 import { RefreshTokenValidationService } from "../../domain/services/refresh-token-validation.service";
 import { RefreshTokenCommand } from "../commands/refresh-token.command";
+import { AuthProvider } from '../../../users/domain/enums/auth-provider.enum';
 
 @Injectable()
 export class RefreshTokenUseCase implements RefreshTokenPort {
@@ -44,7 +45,13 @@ export class RefreshTokenUseCase implements RefreshTokenPort {
       );
 
     const generatedTokens =
-      await this.jwtPort.generateTokens(user);
+      await this.jwtPort.generateTokens(user, {
+        authTime:
+          payload.authTime ?? payload.iat ?? Math.floor(Date.now() / 1000),
+        methods: payload.amr ?? [
+          user.provider === AuthProvider.GOOGLE ? 'google' : 'pwd',
+        ],
+      });
 
     const newHash =
       await this.refreshTokenHasher.hash(
