@@ -1,8 +1,10 @@
-🔐 **Verifica tu correo en {{appName}}**
+### 🔐 Confirma tu correo
+Solo falta verificar que esta dirección te pertenece.
 {{#if verificationCode}}
-Tu código es: `{{verificationCode}}`
+**Código:** `{{verificationCode}}`
 {{/if}}
 {{#if verificationUrl}}
-[Verificar correo]({{verificationUrl}})
+[Verificar mi correo]({{verificationUrl}})
 {{/if}}
-_Vence en {{expirationHours}} horas._
+> Vence en **{{expirationMinutes}} minutos**.
+Si no creaste esta cuenta, puedes ignorar este mensaje.

@@ -1,17 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import { UserRepository } from "../../../users/domain/repositories/user.repository";
-import { PasswordResetToken } from "../../domain/entities/password-reset-token.entity";
-import { PasswordResetTokenRepository } from "../../domain/repositories/password-reset-token.repository";
-import { ForgotPasswordCommand } from "../commands/forgot-password.command";
-import { ForgotPasswordPort } from "../ports/inbound/forgot-password.port";
-import { MailPort } from "../ports/outbound/mail.port";
-import { TokenHasherPort } from "../ports/outbound/token-hasher.port";
-import { TokenGeneratorPort } from "../ports/outbound/token-generator.port";
-import { Email } from "../../../users/domain/value-objects/email.vo";
+import { Injectable } from '@nestjs/common';
+import { UserRepository } from '../../../users/domain/repositories/user.repository';
+import { PasswordResetToken } from '../../domain/entities/password-reset-token.entity';
+import { PasswordResetTokenRepository } from '../../domain/repositories/password-reset-token.repository';
+import { ForgotPasswordCommand } from '../commands/forgot-password.command';
+import { ForgotPasswordPort } from '../ports/inbound/forgot-password.port';
+import { MailPort } from '../ports/outbound/mail.port';
+import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
+import { TokenGeneratorPort } from '../ports/outbound/token-generator.port';
+import { Email } from '../../../users/domain/value-objects/email.vo';
+import { PASSWORD_RESET_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
 
 @Injectable()
-export class ForgotPasswordUseCase implements ForgotPasswordPort
-{
+export class ForgotPasswordUseCase implements ForgotPasswordPort {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly passwordResetRepository: PasswordResetTokenRepository,
@@ -20,7 +20,7 @@ export class ForgotPasswordUseCase implements ForgotPasswordPort
     private readonly mail: MailPort,
   ) {}
 
-  async execute(command: ForgotPasswordCommand,): Promise<void> {
+  async execute(command: ForgotPasswordCommand): Promise<void> {
     const email = new Email(command.email);
 
     const user = await this.userRepository.findByEmail(email);
@@ -31,17 +31,16 @@ export class ForgotPasswordUseCase implements ForgotPasswordPort
 
     const tokenHash = await this.tokenHasher.hash(token);
 
-    const resetToken =
-      PasswordResetToken.create({
-        tokenHash,
-        userId: user.id,
-        expiresAt: new Date(
-          Date.now() + 1000 * 60 * 30,
-        ),
-      });
+    const resetToken = PasswordResetToken.create({
+      tokenHash,
+      userId: user.id,
+      expiresAt: new Date(
+        Date.now() + PASSWORD_RESET_EXPIRATION_MINUTES * 60_000,
+      ),
+    });
 
     await this.passwordResetRepository.create(resetToken);
 
-    await this.mail.sendResetPasswordEmail(user.email.getValue(), token, );
+    await this.mail.sendResetPasswordEmail(user.email.getValue(), token);
   }
 }

@@ -1,12 +1,13 @@
-import { User } from "../../../users/domain/entities/user.entity";
-import { UserRepository } from "../../../users/domain/repositories/user.repository";
-import { Email } from "../../../users/domain/value-objects/email.vo";
-import { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository";
-import { ResendVerificationEmailCommand } from "../commands/resend-verification-email.command";
-import { MailPort } from "../ports/outbound/mail.port";
-import { TokenGeneratorPort } from "../ports/outbound/token-generator.port";
-import { TokenHasherPort } from "../ports/outbound/token-hasher.port";
-import { ResendVerificationEmailUseCase } from "./resend-verification-email.usecase";
+import { User } from '../../../users/domain/entities/user.entity';
+import { UserRepository } from '../../../users/domain/repositories/user.repository';
+import { Email } from '../../../users/domain/value-objects/email.vo';
+import { VerificationTokenRepository } from '../../domain/repositories/verification-token.repository';
+import { ResendVerificationEmailCommand } from '../commands/resend-verification-email.command';
+import { MailPort } from '../ports/outbound/mail.port';
+import { TokenGeneratorPort } from '../ports/outbound/token-generator.port';
+import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
+import { ResendVerificationEmailUseCase } from './resend-verification-email.usecase';
+import { EMAIL_VERIFICATION_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
 
 describe('ResendVerificationEmailUseCase', () => {
   const userRepository = {
@@ -44,19 +45,11 @@ describe('ResendVerificationEmailUseCase', () => {
       passwordHash: 'hash',
     });
 
-    jest
-      .spyOn(userRepository, 'findById')
-      .mockResolvedValue(user);
-    jest
-      .spyOn(tokenGenerator, 'generate')
-      .mockReturnValue('123456');
-    jest
-      .spyOn(tokenHasher, 'hash')
-      .mockResolvedValue('code-hash');
+    jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
+    jest.spyOn(tokenGenerator, 'generate').mockReturnValue('123456');
+    jest.spyOn(tokenHasher, 'hash').mockResolvedValue('code-hash');
 
-    await useCase.execute(
-      new ResendVerificationEmailCommand(user.id),
-    );
+    await useCase.execute(new ResendVerificationEmailCommand(user.id));
 
     expect(verificationTokenRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -68,6 +61,15 @@ describe('ResendVerificationEmailUseCase', () => {
       'clean@example.com',
       '123456',
     );
+
+    const savedToken = jest.mocked(verificationTokenRepository.create).mock
+      .calls[0][0];
+    const remainingMilliseconds = savedToken.expiresAt.getTime() - Date.now();
+
+    expect(remainingMilliseconds).toBeGreaterThan(14 * 60_000);
+    expect(remainingMilliseconds).toBeLessThanOrEqual(
+      EMAIL_VERIFICATION_EXPIRATION_MINUTES * 60_000,
+    );
   });
 
   it('does not send another code when the email is verified', async () => {
@@ -78,13 +80,9 @@ describe('ResendVerificationEmailUseCase', () => {
     });
     user.verifyEmail();
 
-    jest
-      .spyOn(userRepository, 'findById')
-      .mockResolvedValue(user);
+    jest.spyOn(userRepository, 'findById').mockResolvedValue(user);
 
-    await useCase.execute(
-      new ResendVerificationEmailCommand(user.id),
-    );
+    await useCase.execute(new ResendVerificationEmailCommand(user.id));
 
     expect(tokenGenerator.generate).not.toHaveBeenCalled();
     expect(verificationTokenRepository.create).not.toHaveBeenCalled();

@@ -1,13 +1,14 @@
-import { Injectable } from "@nestjs/common";
-import { UserRepository } from "../../../users/domain/repositories/user.repository";
-import { UserNotFoundException } from "../../../users/domain/exceptions/user-not-found.exception";
-import { VerificationToken } from "../../domain/entities/verification-token.entity";
-import { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository";
-import { ResendVerificationEmailCommand } from "../commands/resend-verification-email.command";
-import { ResendVerificationEmailPort } from "../ports/inbound/resend-verification-email.port";
-import { MailPort } from "../ports/outbound/mail.port";
-import { TokenGeneratorPort } from "../ports/outbound/token-generator.port";
-import { TokenHasherPort } from "../ports/outbound/token-hasher.port";
+import { Injectable } from '@nestjs/common';
+import { UserRepository } from '../../../users/domain/repositories/user.repository';
+import { UserNotFoundException } from '../../../users/domain/exceptions/user-not-found.exception';
+import { VerificationToken } from '../../domain/entities/verification-token.entity';
+import { VerificationTokenRepository } from '../../domain/repositories/verification-token.repository';
+import { ResendVerificationEmailCommand } from '../commands/resend-verification-email.command';
+import { ResendVerificationEmailPort } from '../ports/inbound/resend-verification-email.port';
+import { MailPort } from '../ports/outbound/mail.port';
+import { TokenGeneratorPort } from '../ports/outbound/token-generator.port';
+import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
+import { EMAIL_VERIFICATION_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
 
 @Injectable()
 export class ResendVerificationEmailUseCase
@@ -21,9 +22,7 @@ export class ResendVerificationEmailUseCase
     private readonly mail: MailPort,
   ) {}
 
-  async execute(
-    command: ResendVerificationEmailCommand,
-  ): Promise<void> {
+  async execute(command: ResendVerificationEmailCommand): Promise<void> {
     const user = await this.userRepository.findById(command.userId);
 
     if (!user) {
@@ -39,13 +38,12 @@ export class ResendVerificationEmailUseCase
     const verificationToken = VerificationToken.create({
       tokenHash,
       userId: user.id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      expiresAt: new Date(
+        Date.now() + EMAIL_VERIFICATION_EXPIRATION_MINUTES * 60_000,
+      ),
     });
 
     await this.verificationTokenRepository.create(verificationToken);
-    await this.mail.sendVerificationEmail(
-      user.email.getValue(),
-      code,
-    );
+    await this.mail.sendVerificationEmail(user.email.getValue(), code);
   }
 }

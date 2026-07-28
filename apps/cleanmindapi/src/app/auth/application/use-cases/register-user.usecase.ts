@@ -1,25 +1,25 @@
-import { Injectable } from "@nestjs/common";
-import { RegisterUserPort } from "../ports/inbound/register-user.port";
-import { UserRepository } from "../../../users/domain/repositories/user.repository";
-import { PasswordHasherPort } from "../ports/outbound/password-hasher.port";
-import { TokenHasherPort } from "../ports/outbound/token-hasher.port";
-import { RefreshTokenRepository } from "../../domain/repositories/refresh-token.repository";
-import { JwtPort } from "../ports/outbound/jwt.port";
-import { TokenGeneratorPort } from "../ports/outbound/token-generator.port";
-import { MailPort } from "../ports/outbound/mail.port";
-import { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository";
-import { RegisterUserCommand } from "../commands/register-user.command";
-import { AuthResponse } from "../../api/response/auth-response";
-import { Email } from "../../../users/domain/value-objects/email.vo";
-import { Password } from "../../../users/domain/value-objects/password.vo";
-import { EmailAlreadyExistsException } from "../../../users/domain/exceptions/email-already-exists.exception";
-import { User } from "../../../users/domain/entities/user.entity";
-import { RefreshToken } from "../../domain/entities/refresh-token.entity";
-import { VerificationToken } from "../../domain/entities/verification-token.entity";
-import { AuthResponseMapper } from "../../api/mapper/auth-response.mapper";
-import { UserSettingsRepository } from "../../../settings/domain/repositories/user-settings.repository";
-import { UserSettings } from "../../../settings/domain/entities/user-settings.entity";
-
+import { Injectable } from '@nestjs/common';
+import { RegisterUserPort } from '../ports/inbound/register-user.port';
+import { UserRepository } from '../../../users/domain/repositories/user.repository';
+import { PasswordHasherPort } from '../ports/outbound/password-hasher.port';
+import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
+import { RefreshTokenRepository } from '../../domain/repositories/refresh-token.repository';
+import { JwtPort } from '../ports/outbound/jwt.port';
+import { TokenGeneratorPort } from '../ports/outbound/token-generator.port';
+import { MailPort } from '../ports/outbound/mail.port';
+import { VerificationTokenRepository } from '../../domain/repositories/verification-token.repository';
+import { RegisterUserCommand } from '../commands/register-user.command';
+import { AuthResponse } from '../../api/response/auth-response';
+import { Email } from '../../../users/domain/value-objects/email.vo';
+import { Password } from '../../../users/domain/value-objects/password.vo';
+import { EmailAlreadyExistsException } from '../../../users/domain/exceptions/email-already-exists.exception';
+import { User } from '../../../users/domain/entities/user.entity';
+import { RefreshToken } from '../../domain/entities/refresh-token.entity';
+import { VerificationToken } from '../../domain/entities/verification-token.entity';
+import { AuthResponseMapper } from '../../api/mapper/auth-response.mapper';
+import { UserSettingsRepository } from '../../../settings/domain/repositories/user-settings.repository';
+import { UserSettings } from '../../../settings/domain/entities/user-settings.entity';
+import { EMAIL_VERIFICATION_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
 
 @Injectable()
 export class RegisterUserUseCase implements RegisterUserPort {
@@ -40,25 +40,25 @@ export class RegisterUserUseCase implements RegisterUserPort {
     const email = new Email(command.email);
     const password = new Password(command.password);
 
-    const exists = await this.userRepository.existsByEmail(email)
+    const exists = await this.userRepository.existsByEmail(email);
 
     if (exists) throw new EmailAlreadyExistsException();
 
-    const passwordHash = await this.passwordHasher.hash(password)
+    const passwordHash = await this.passwordHasher.hash(password);
 
     const user = User.createLocal({
       name: command.name,
       email,
-      passwordHash
-    })
+      passwordHash,
+    });
 
     const createdUser = await this.userRepository.create(user);
 
-    const settings = UserSettings.createDefault(createdUser.id)
+    const settings = UserSettings.createDefault(createdUser.id);
 
-    await this.userSettingsRepository.create(settings)
+    await this.userSettingsRepository.create(settings);
 
-    const tokens = await this.jwt.generateTokens(createdUser)
+    const tokens = await this.jwt.generateTokens(createdUser);
 
     const refreshTokenHash = await this.refreshTokenHasher.hash(
       tokens.refreshToken,
@@ -67,38 +67,27 @@ export class RegisterUserUseCase implements RegisterUserPort {
     const refreshToken = RefreshToken.create({
       tokenHash: refreshTokenHash,
       userId: createdUser.id,
-      expiresAt: new Date(
-        Date.now() + tokens.refreshTokenExpiresIn * 1000,
-      ),
+      expiresAt: new Date(Date.now() + tokens.refreshTokenExpiresIn * 1000),
     });
 
     await this.refreshTokenRepository.create(refreshToken);
 
-    const code = this.tokenGenerator.generate()
+    const code = this.tokenGenerator.generate();
 
     const codeHash = await this.tokenHasher.hash(code);
 
-    const verification =
-      VerificationToken.create({
-        tokenHash: codeHash,
-        userId: createdUser.id,
-        expiresAt: new Date(
-          Date.now() + 1000 * 60 * 60 * 24,
-        ),
-      });
+    const verification = VerificationToken.create({
+      tokenHash: codeHash,
+      userId: createdUser.id,
+      expiresAt: new Date(
+        Date.now() + EMAIL_VERIFICATION_EXPIRATION_MINUTES * 60_000,
+      ),
+    });
 
-    await this.verificationTokenRepository.create(
-      verification,
-    );
+    await this.verificationTokenRepository.create(verification);
 
-    await this.mail.sendVerificationEmail(
-      createdUser.email.getValue(),
-      code,
-    );
+    await this.mail.sendVerificationEmail(createdUser.email.getValue(), code);
 
-    return AuthResponseMapper.toResponse(
-      createdUser,
-      tokens,
-    )
+    return AuthResponseMapper.toResponse(createdUser, tokens);
   }
 }

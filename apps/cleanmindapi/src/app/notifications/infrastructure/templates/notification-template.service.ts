@@ -4,14 +4,18 @@ import { HandlebarsService } from '../../../shared/mail/helpers/handlebars.servi
 import { MAIL_TEMPLATE_BY_NOTIFICATION_TYPE } from '../../../shared/mail/helpers/template.map';
 import { Notification } from '../../domain/entities/notification.entity';
 import { NotificationType } from '../../domain/enums/notification-type.enum';
+import {
+  EMAIL_VERIFICATION_EXPIRATION_MINUTES,
+  PASSWORD_RESET_EXPIRATION_MINUTES,
+} from '../../../shared/application/auth-token-expiration.constants';
 
 const SUBJECTS: Record<NotificationType, string> = {
-  [NotificationType.VERIFY_EMAIL]: 'Verifica tu correo electrónico',
-  [NotificationType.PASSWORD_RESET]: 'Restablece tu contraseña',
-  [NotificationType.TASK_REMINDER]: 'Recordatorio de tarea',
-  [NotificationType.TASK_OVERDUE]: 'Tarea vencida',
-  [NotificationType.TASK_COMPLETED]: 'Tarea completada',
-  [NotificationType.MOTIVATIONAL]: 'Un impulso para tu día',
+  [NotificationType.VERIFY_EMAIL]: 'Confirma tu correo en CleanMind',
+  [NotificationType.PASSWORD_RESET]: 'Crea una nueva contraseña',
+  [NotificationType.TASK_REMINDER]: 'Tienes una tarea próxima',
+  [NotificationType.TASK_OVERDUE]: 'Una tarea quedó pendiente',
+  [NotificationType.TASK_COMPLETED]: 'Completaste una tarea',
+  [NotificationType.MOTIVATIONAL]: 'Un impulso tranquilo para tu día',
 };
 
 @Injectable()
@@ -58,11 +62,11 @@ export class NotificationTemplateService {
     }
 
     if (notification.type === NotificationType.VERIFY_EMAIL) {
-      context.expirationHours ??= 24;
+      context.expirationMinutes ??= EMAIL_VERIFICATION_EXPIRATION_MINUTES;
     }
 
     if (notification.type === NotificationType.PASSWORD_RESET) {
-      context.expirationMinutes ??= 30;
+      context.expirationMinutes ??= PASSWORD_RESET_EXPIRATION_MINUTES;
     }
 
     return context;
