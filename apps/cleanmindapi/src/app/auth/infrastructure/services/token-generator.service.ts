@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { TokenGeneratorPort } from "../../application/ports/outbound/token-generator.port";
-import { randomInt } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 
 @Injectable()
 export class TokenGeneratorService implements TokenGeneratorPort {
-  generate(): string {
-    return randomInt(100000, 1000000).toString()
+  generate(bytes = 6): string {
+    if (bytes === 6) {
+      return randomInt(100000, 1000000).toString();
+    }
+
+    return randomBytes(bytes).toString('base64url');
   }
 }

@@ -27,7 +27,7 @@ export class ForgotPasswordUseCase implements ForgotPasswordPort
 
     if (!user) return;
 
-    const token = this.tokenGenerator.generate();
+    const token = this.tokenGenerator.generate(32);
 
     const tokenHash = await this.tokenHasher.hash(token);
 

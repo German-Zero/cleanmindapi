@@ -42,6 +42,9 @@ import { SetPasswordUseCase } from "../../application/use-cases/set-password.use
 import { MfaService, MfaSetupResponse, MfaStatusResponse } from '../../application/services/mfa.service';
 import { MfaCodeRequest } from '../requests/mfa-code.request';
 import { VerifyMfaLoginRequest } from '../requests/verify-mfa-login.request';
+import { ConfigService } from '@nestjs/config';
+import { ResendVerificationEmailPort } from "../../application/ports/inbound/resend-verification-email.port";
+import { ResendVerificationEmailCommand } from "../../application/commands/resend-verification-email.command";
 
 
 @Controller('auth')
@@ -53,6 +56,7 @@ export class AuthController {
     private readonly logoutUser: LogoutUserUseCase,
     private readonly getCurrentUser: GetCurrentUserUseCase,
     private readonly verifyEmailPort: VerifyEmailPort,
+    private readonly resendVerificationEmailPort: ResendVerificationEmailPort,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly loginGoogleUseCase: LoginGoogleUseCase,
@@ -60,6 +64,7 @@ export class AuthController {
     private readonly changePasswordUseCase: ChangePasswordUseCase,
     private readonly setPasswordUseCase: SetPasswordUseCase,
     private readonly mfaService: MfaService,
+    private readonly config: ConfigService,
   ) {}
 
   @Post('register')
@@ -253,9 +258,10 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-store')
   async me(@CurrentUser() user: JwtPayload): Promise<CurrentUserResponse> {
-    const payload = await this.getCurrentUser.execute(user);
-    return CurrentUserMapper.toResponse(payload);
+    const currentUser = await this.getCurrentUser.execute(user.sub);
+    return CurrentUserMapper.toResponse(currentUser);
   }
 
   @Post('verify-email')
@@ -263,6 +269,17 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyEmail(@Body() request: VerifyEmailRequest): Promise<void> {
     await this.verifyEmailPort.execute(new VerifyEmailCommand(request.code));
+  }
+
+  @Post('resend-verification-email')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resendVerificationEmail(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<void> {
+    await this.resendVerificationEmailPort.execute(
+      new ResendVerificationEmailCommand(user.sub),
+    );
   }
 
   @Post('forgot-password')
@@ -337,7 +354,7 @@ export class AuthController {
   async googleCallback(
     @CurrentUser() user: GoogleUser,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<LoginResponse> {
+  ): Promise<void> {
 
     const response =
       await this.loginGoogleUseCase.execute(
@@ -350,7 +367,14 @@ export class AuthController {
 
     if ('challengeToken' in response) {
       this.cookieService.clearTokens(res);
-      return response;
+      const loginUrl = new URL(
+        '/login',
+        this.config.getOrThrow<string>('auth.frontend.url'),
+      );
+      loginUrl.searchParams.set('googleMfaChallenge', response.challengeToken);
+      loginUrl.searchParams.set('googleMfaExpiresIn', String(response.expiresIn));
+      res.redirect(HttpStatus.FOUND, loginUrl.toString());
+      return;
     }
 
     this.cookieService.setAccessToken(
@@ -365,6 +389,12 @@ export class AuthController {
       604800,
     );
 
-    return response;
+    res.redirect(
+      HttpStatus.FOUND,
+      new URL(
+        '/dashboard/calendar',
+        this.config.getOrThrow<string>('auth.frontend.url'),
+      ).toString(),
+    );
   }
 }

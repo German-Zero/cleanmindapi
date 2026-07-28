@@ -41,7 +41,7 @@ export class ResendMailAdapter implements MailPort {
       this.config.get<string>('auth.frontend.url');
 
     const url =
-      `${frontend}/auth/reset-password?token=${token}`;
+      `${frontend}/recover-password?token=${token}`;
 
     await this.resend.emails.send({
       from: this.config.get<string>('auth.mail.from')!,
