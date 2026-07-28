@@ -125,7 +125,7 @@ describe('MfaService', () => {
     const staleAuthTime = Math.floor(Date.now() / 1000) - 601;
 
     await expect(service.setup(user.id, staleAuthTime)).rejects.toThrow(
-      'Recent authentication is required',
+      'Vuelve a iniciar sesión para continuar.',
     );
   });
 
@@ -176,7 +176,7 @@ describe('MfaService', () => {
 
     await expect(
       service.verifyLogin('challenge-token', '123456'),
-    ).rejects.toThrow('Invalid MFA code');
+    ).rejects.toThrow('El código ingresado no es válido.');
     expect(repository.claimChallengeAttempt).toHaveBeenCalledWith(
       expect.stringMatching(/^[a-f0-9]{64}$/),
       5,

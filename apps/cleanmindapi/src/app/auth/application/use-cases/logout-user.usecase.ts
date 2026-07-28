@@ -27,7 +27,9 @@ export class LogoutUserUseCase implements LogoutPort {
     );
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        'Tu sesión no es válida. Inicia sesión nuevamente.',
+      );
     }
 
     const refreshTokens =

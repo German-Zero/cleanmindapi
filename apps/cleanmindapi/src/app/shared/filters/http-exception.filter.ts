@@ -4,6 +4,33 @@ import { Request, Response } from "express";
 
 import { ErrorResponse } from "./error-response";
 
+const errorLabels: Partial<Record<HttpStatus, string>> = {
+  [HttpStatus.BAD_REQUEST]: 'Solicitud incorrecta',
+  [HttpStatus.UNAUTHORIZED]: 'No autorizado',
+  [HttpStatus.FORBIDDEN]: 'Acceso denegado',
+  [HttpStatus.NOT_FOUND]: 'No encontrado',
+  [HttpStatus.CONFLICT]: 'Conflicto',
+  [HttpStatus.UNPROCESSABLE_ENTITY]: 'Datos no válidos',
+  [HttpStatus.TOO_MANY_REQUESTS]: 'Demasiadas solicitudes',
+  [HttpStatus.INTERNAL_SERVER_ERROR]: 'Error interno',
+};
+
+const genericMessages: Record<string, string> = {
+  'Bad Request': 'Revisa los datos enviados.',
+  Unauthorized: 'Debes iniciar sesión para continuar.',
+  'Forbidden resource': 'No tienes permiso para realizar esta acción.',
+  'Not Found': 'No encontramos el recurso solicitado.',
+  'Too Many Requests': 'Realizaste demasiados intentos. Espera un momento.',
+};
+
+function localizeMessage(message: string | string[]): string | string[] {
+  const translate = (value: string) => genericMessages[value] ?? value;
+
+  return Array.isArray(message)
+    ? message.map(translate)
+    : translate(message);
+}
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
 
@@ -22,21 +49,22 @@ export class HttpExceptionFilter implements ExceptionFilter {
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let message: string | string[] = 'Internal server error';
+    let message: string | string[] = 'Ocurrió un error inesperado.';
 
-    let error = 'Internal Server Error';
+    const error = errorLabels[status] ?? 'Error';
 
     if (exception instanceof HttpException) {
       const exceptionResponse =
         exception.getResponse();
 
       if (typeof exceptionResponse === 'string') {
-        message = exceptionResponse;
+        message = localizeMessage(exceptionResponse);
       } else {
         const body = exceptionResponse as Record<string, unknown>
 
-        message = (body.message as string | string[]) ?? message;
-        error = (body.error as string) ?? error;
+        message = localizeMessage(
+          (body.message as string | string[]) ?? message,
+        );
       }
     }
 

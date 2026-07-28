@@ -31,7 +31,7 @@ export class VerifyEmailUseCase implements VerifyEmailPort
       verificationToken.isVerified
     ) {
       throw new UnauthorizedException(
-        'Invalid verification token',
+        'El código no es válido o ya venció.',
       );
     }
 
@@ -41,7 +41,9 @@ export class VerifyEmailUseCase implements VerifyEmailPort
       );
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        'El código no es válido o ya venció.',
+      );
     }
 
     user.verifyEmail();

@@ -30,7 +30,9 @@ export class RefreshTokenUseCase implements RefreshTokenPort {
     const user = await this.userRepository.findById(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        'Tu sesión no es válida. Inicia sesión nuevamente.',
+      );
     }
 
     const refreshTokens =

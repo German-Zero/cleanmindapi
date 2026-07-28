@@ -63,17 +63,17 @@ export class MfaService {
       !authTime ||
       Math.floor(Date.now() / 1000) - authTime > maxAuthAge
     ) {
-      throw new UnauthorizedException('Recent authentication is required');
+      throw new UnauthorizedException('Vuelve a iniciar sesión para continuar.');
     }
 
     if (!user.emailVerified) {
-      throw new ForbiddenException('Email verification is required before enabling MFA');
+      throw new ForbiddenException('Debes verificar tu email antes de activar esta función.');
     }
 
     const current = await this.repository.findAuthenticator(userId);
 
     if (current?.enabledAt) {
-      throw new ConflictException('MFA is already enabled');
+      throw new ConflictException('La verificación en dos pasos ya está activa.');
     }
 
     const secret = this.totp.generateSecret();
@@ -97,7 +97,7 @@ export class MfaService {
     const authenticator = await this.requirePendingAuthenticator(userId);
 
     if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('Invalid MFA code');
+      throw new UnauthorizedException('El código ingresado no es válido.');
     }
 
     const recoveryCodes = this.generateRecoveryCodes();
@@ -115,7 +115,7 @@ export class MfaService {
     const authenticator = await this.requireEnabledAuthenticator(userId);
 
     if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('Invalid MFA code');
+      throw new UnauthorizedException('El código ingresado no es válido.');
     }
 
     await this.repository.deleteAuthenticator(userId);
@@ -126,7 +126,7 @@ export class MfaService {
     const authenticator = await this.requireEnabledAuthenticator(userId);
 
     if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('Invalid MFA code');
+      throw new UnauthorizedException('El código ingresado no es válido.');
     }
 
     const recoveryCodes = this.generateRecoveryCodes();
@@ -171,18 +171,18 @@ export class MfaService {
     );
 
     if (!challenge) {
-      throw new UnauthorizedException('MFA challenge is invalid or expired');
+      throw new UnauthorizedException('La verificación venció. Inicia sesión nuevamente.');
     }
 
     const authenticator = await this.requireEnabledAuthenticator(challenge.userId);
     const valid = await this.verifyAuthenticatorCode(authenticator, code);
 
     if (!valid) {
-      throw new UnauthorizedException('Invalid MFA code');
+      throw new UnauthorizedException('El código ingresado no es válido.');
     }
 
     if (!(await this.repository.consumeChallenge(challenge.id))) {
-      throw new UnauthorizedException('MFA challenge has already been used');
+      throw new UnauthorizedException('Este intento de verificación ya fue utilizado.');
     }
 
     return this.sessions.issue(
@@ -217,7 +217,7 @@ export class MfaService {
   private async requireUser(userId: string): Promise<User> {
     const user = await this.users.findById(userId);
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('No encontramos el usuario.');
 
     return user;
   }
@@ -228,7 +228,7 @@ export class MfaService {
     const authenticator = await this.repository.findAuthenticator(userId);
 
     if (!authenticator || authenticator.enabledAt) {
-      throw new ConflictException('MFA setup has not been started');
+      throw new ConflictException('Primero debes iniciar la configuración de la verificación en dos pasos.');
     }
 
     return authenticator;
@@ -240,7 +240,7 @@ export class MfaService {
     const authenticator = await this.repository.findAuthenticator(userId);
 
     if (!authenticator?.enabledAt) {
-      throw new ConflictException('MFA is not enabled');
+      throw new ConflictException('La verificación en dos pasos no está activa.');
     }
 
     return authenticator;

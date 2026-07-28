@@ -14,20 +14,20 @@ export class ChangePasswordUseCase implements ChangePasswordPort {
   ) {}
 
   async execute(command: ChangePasswordCommand): Promise<void> {
-    if (command.newPassword !== command.confirmPassword) throw new BadRequestException('Passwords do not match')
+    if (command.newPassword !== command.confirmPassword) throw new BadRequestException('Las contraseñas no coinciden.')
 
     const user = await this.repo.findById(command.userId)
 
     if (!user) throw new UserNotFoundException();
 
-    if (!user.passwordHash) throw new BadRequestException('Passowrd login is not available')
+    if (!user.passwordHash) throw new BadRequestException('Esta cuenta todavía no tiene una contraseña local.')
 
     const valid = await this.passwordHasher.compare(
       new Password(command.currentPassword),
       user.passwordHash,
     )
 
-    if (!valid) throw new UnauthorizedException('Current password is incorrect')
+    if (!valid) throw new UnauthorizedException('La contraseña actual es incorrecta.')
 
     const newHash = await this.passwordHasher.hash(new Password(command.newPassword));
 
