@@ -62,4 +62,20 @@ describe('DiscordConnectionService', () => {
     );
     expect(connections.upsert).not.toHaveBeenCalled();
   });
+
+  it('disconnects the Discord account owned by the user', async () => {
+    const connections = {
+      deleteByUserId: jest.fn().mockResolvedValue(undefined),
+    } as unknown as DiscordConnectionRepository;
+    const discord = {} as DiscordApiService;
+    const service = new DiscordConnectionService(connections, discord);
+
+    await expect(
+      service.disconnect('cleanmind-user'),
+    ).resolves.toBeUndefined();
+
+    expect(connections.deleteByUserId).toHaveBeenCalledWith(
+      'cleanmind-user',
+    );
+  });
 });

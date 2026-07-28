@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
 import { RegisterRequest } from "../requests/register.request";
 import { RegisterUserCommand } from "../../application/commands/register-user.command";
 import { Public } from "../../../shared/security/decorators/public.decorator";
@@ -45,6 +45,7 @@ import { VerifyMfaLoginRequest } from '../requests/verify-mfa-login.request';
 import { ConfigService } from '@nestjs/config';
 import { ResendVerificationEmailPort } from "../../application/ports/inbound/resend-verification-email.port";
 import { ResendVerificationEmailCommand } from "../../application/commands/resend-verification-email.command";
+import { DeleteAccountUseCase } from "../../application/use-cases/delete-account.usecase";
 
 
 @Controller('auth')
@@ -65,6 +66,7 @@ export class AuthController {
     private readonly setPasswordUseCase: SetPasswordUseCase,
     private readonly mfaService: MfaService,
     private readonly config: ConfigService,
+    private readonly deleteAccountUseCase: DeleteAccountUseCase,
   ) {}
 
   @Post('register')
@@ -262,6 +264,17 @@ export class AuthController {
   async me(@CurrentUser() user: JwtPayload): Promise<CurrentUserResponse> {
     const currentUser = await this.getCurrentUser.execute(user.sub);
     return CurrentUserMapper.toResponse(currentUser);
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAccount(
+    @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.deleteAccountUseCase.execute(user.sub);
+    this.cookieService.clearTokens(res);
   }
 
   @Post('verify-email')

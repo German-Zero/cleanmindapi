@@ -21,6 +21,7 @@ import { VerifyEmailUseCase } from "./application/use-cases/verify-email.usecase
 import { ChangePasswordUseCase } from "./application/use-cases/change-password.usecase";
 import { SetPasswordUseCase } from "./application/use-cases/set-password.usecase";
 import { ResendVerificationEmailUseCase } from "./application/use-cases/resend-verification-email.usecase";
+import { DeleteAccountUseCase } from "./application/use-cases/delete-account.usecase";
 
 import { PrismaUserRepository } from "../users/infrastructure/repositories/prisma-user.repository";
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
@@ -53,6 +54,7 @@ import { VerifyEmailPort } from "./application/ports/inbound/verify-email.port";
 import { ChangePasswordPort } from "./application/ports/inbound/change-password.port";
 import { SetPasswordPort } from "./application/ports/inbound/set-password.port";
 import { ResendVerificationEmailPort } from "./application/ports/inbound/resend-verification-email.port";
+import { DeleteAccountPort } from "./application/ports/inbound/delete-account.port";
 
 import { UserRepository } from "../users/domain/repositories/user.repository";
 import { RefreshTokenRepository } from "./domain/repositories/refresh-token.repository";
@@ -97,6 +99,12 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
     GoogleStrategy,
 
     // Use-Cases
+
+    DeleteAccountUseCase,
+    {
+      provide: DeleteAccountPort,
+      useExisting: DeleteAccountUseCase,
+    },
 
     SetPasswordUseCase,
     {
