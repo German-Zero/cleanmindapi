@@ -54,3 +54,9 @@ export interface PomodoroSummary {
   };
   daily: PomodoroDailySummary[];
 }
+
+export interface PomodoroState {
+  settings: PomodoroSettings;
+  activeSession: PomodoroSession | null;
+  summary: PomodoroSummary;
+}

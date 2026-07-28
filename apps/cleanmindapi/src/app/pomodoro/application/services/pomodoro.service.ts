@@ -11,6 +11,7 @@ import {
   PomodoroSession,
   PomodoroSessionStatus,
   PomodoroSettings,
+  PomodoroState,
   PomodoroSummary,
 } from '../../domain/models/pomodoro.model';
 import {
@@ -106,6 +107,20 @@ export class PomodoroService {
 
   async getActiveSession(userId: string): Promise<PomodoroSession | null> {
     return this.repository.findActiveByUserId(userId);
+  }
+
+  async getState(userId: string, days = 7): Promise<PomodoroState> {
+    const [settings, activeSession, summary] = await Promise.all([
+      this.getSettings(userId),
+      this.getActiveSession(userId),
+      this.getSummary(userId, days),
+    ]);
+
+    return {
+      settings,
+      activeSession,
+      summary,
+    };
   }
 
   async pauseSession(

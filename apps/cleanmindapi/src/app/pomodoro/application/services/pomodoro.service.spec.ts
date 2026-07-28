@@ -68,6 +68,24 @@ describe('PomodoroService', () => {
     };
   }
 
+  it('loads settings, active session and summary as one state', async () => {
+    const { service } = createService({
+      repository: {
+        findActiveByUserId: jest.fn().mockResolvedValue(activeSession),
+      },
+    });
+
+    const state = await service.getState(
+      'user-id',
+      7,
+    );
+
+    expect(state.settings).toBe(settings);
+    expect(state.activeSession).toBe(activeSession);
+    expect(state.summary.period.days).toBe(7);
+    expect(state.summary.daily).toHaveLength(7);
+  });
+
   it('starts a session using the authenticated user settings', async () => {
     const { service, repository } = createService();
 

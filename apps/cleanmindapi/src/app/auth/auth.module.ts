@@ -253,6 +253,8 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
       useExisting: ResendMailAdapter,
     },
   ],
-  exports: []
+  exports: [
+    GetCurrentUserPort,
+  ]
 })
 export class AuthModule {}

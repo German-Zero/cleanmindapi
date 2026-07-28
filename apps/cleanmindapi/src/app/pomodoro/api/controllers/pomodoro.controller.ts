@@ -20,6 +20,7 @@ import {
   PomodoroBreakType,
   PomodoroSession,
   PomodoroSettings,
+  PomodoroState,
   PomodoroSummary,
 } from '../../domain/models/pomodoro.model';
 import { FinishPomodoroSessionRequest } from '../requests/finish-pomodoro-session.request';
@@ -44,6 +45,17 @@ export class PomodoroController {
     @Body() request: UpdatePomodoroSettingsRequest,
   ): Promise<PomodoroSettings> {
     return this.pomodoro.updateSettings(user.sub, request);
+  }
+
+  @Get('state')
+  async getState(
+    @CurrentUser() user: JwtPayload,
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+  ): Promise<PomodoroState> {
+    return this.pomodoro.getState(
+      user.sub,
+      days,
+    );
   }
 
   @Get('sessions/active')
