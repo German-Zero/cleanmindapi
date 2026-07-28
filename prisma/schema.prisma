@@ -273,7 +273,8 @@ model UserSettings {
   id     String @id @default(uuid())
   userId String @unique
 
-  theme Theme @default(LUNAR_MIND)
+  theme            Theme            @default(LUNAR_MIND)
+  backgroundMotion BackgroundMotion @default(NONE)
 
   emailNotifications    Boolean @default(true)
   whatsappNotifications Boolean @default(false)
@@ -299,6 +300,16 @@ enum Theme {
   LUNAR_MIND
   DEEP_SERENITY
   CALM_TECH
+  SOFT_DAWN
+  MINT_BREEZE
+  CLEAR_SKY
+}
+
+enum BackgroundMotion {
+  NONE
+  STAR_RAIN
+  ORBITAL_GALAXY
+  SOFT_AURORA
 }
 
 enum NotificationFrequency {
