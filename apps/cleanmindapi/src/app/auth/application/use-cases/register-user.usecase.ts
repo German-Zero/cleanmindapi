@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { RegisterUserPort } from '../ports/inbound/register-user.port';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { PasswordHasherPort } from '../ports/outbound/password-hasher.port';
@@ -37,6 +37,10 @@ export class RegisterUserUseCase implements RegisterUserPort {
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<AuthResponse> {
+    if (!command.acceptedTerms) {
+      throw new BadRequestException('Debes aceptar los términos y la política de privacidad.');
+    }
+
     const email = new Email(command.email);
     const password = new Password(command.password);
 
@@ -50,6 +54,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
       name: command.name,
       email,
       passwordHash,
+      termsAcceptedAt: new Date(),
     });
 
     const createdUser = await this.userRepository.create(user);

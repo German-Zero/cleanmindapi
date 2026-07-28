@@ -82,6 +82,7 @@ export class AuthController {
           request.name,
           request.email,
           request.password,
+          request.acceptedTerms,
         ),
       );
 

@@ -3,5 +3,6 @@ export class RegisterUserCommand {
     public readonly name: string,
     public readonly email: string,
     public readonly password: string,
+    public readonly acceptedTerms: boolean,
   ) {}
 }
