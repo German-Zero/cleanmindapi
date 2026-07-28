@@ -17,6 +17,7 @@ import {
   FinishPomodoroSessionData,
   PomodoroRepository,
   PomodoroSettingsUpdate,
+  UpdatePomodoroPauseData,
 } from '../../domain/repositories/pomodoro.repository';
 
 @Injectable()
@@ -75,7 +76,9 @@ export class PrismaPomodoroRepository implements PomodoroRepository {
     return session ? this.toDomain(session) : null;
   }
 
-  async createSession(data: CreatePomodoroSessionData): Promise<PomodoroSession> {
+  async createSession(
+    data: CreatePomodoroSessionData,
+  ): Promise<PomodoroSession> {
     try {
       const session = await this.prisma.pomodoroSession.create({
         data: {
@@ -86,12 +89,39 @@ export class PrismaPomodoroRepository implements PomodoroRepository {
 
       return this.toDomain(session);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('Ya existe una sesión Pomodoro activa');
       }
 
       throw error;
     }
+  }
+
+  async updateActiveSessionPause(
+    id: string,
+    userId: string,
+    data: UpdatePomodoroPauseData,
+  ): Promise<PomodoroSession | null> {
+    const result = await this.prisma.pomodoroSession.updateMany({
+      where: {
+        id,
+        userId,
+        status: PrismaPomodoroSessionStatus.ACTIVE,
+      },
+      data: {
+        pausedAt: data.pausedAt,
+        accumulatedPausedSeconds: data.accumulatedPausedSeconds,
+      },
+    });
+
+    if (result.count === 0) {
+      return null;
+    }
+
+    return this.findSessionByIdAndUserId(id, userId);
   }
 
   async finishActiveSession(
@@ -133,7 +163,7 @@ export class PrismaPomodoroRepository implements PomodoroRepository {
       orderBy: { endedAt: 'asc' },
     });
 
-    return sessions.map(session => this.toDomain(session));
+    return sessions.map((session) => this.toDomain(session));
   }
 
   private toDomain(session: PrismaPomodoroSession): PomodoroSession {
@@ -149,6 +179,8 @@ export class PrismaPomodoroRepository implements PomodoroRepository {
       actualBreakSeconds: session.actualBreakSeconds,
       startedAt: session.startedAt,
       endedAt: session.endedAt,
+      pausedAt: session.pausedAt,
+      accumulatedPausedSeconds: session.accumulatedPausedSeconds,
     };
   }
 }

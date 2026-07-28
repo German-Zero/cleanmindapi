@@ -46,6 +46,7 @@ model User {
   mfaChallenges       MfaChallenge[]
   pomodoroSettings    PomodoroSettings?
   pomodoroSessions    PomodoroSession[]
+  whiteboard          Whiteboard?
 
   @@map("users")
 }
@@ -216,19 +217,21 @@ model PomodoroSettings {
 }
 
 model PomodoroSession {
-  id                  String                @id @default(uuid())
-  userId              String
-  taskId              String?
-  status              PomodoroSessionStatus @default(ACTIVE)
-  breakType           PomodoroBreakType     @default(SHORT)
-  plannedFocusSeconds Int
-  plannedBreakSeconds Int
-  actualFocusSeconds  Int                   @default(0)
-  actualBreakSeconds  Int                   @default(0)
-  startedAt           DateTime              @default(now())
-  endedAt             DateTime?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  id                       String                @id @default(uuid())
+  userId                   String
+  taskId                   String?
+  status                   PomodoroSessionStatus @default(ACTIVE)
+  breakType                PomodoroBreakType     @default(SHORT)
+  plannedFocusSeconds      Int
+  plannedBreakSeconds      Int
+  actualFocusSeconds       Int                   @default(0)
+  actualBreakSeconds       Int                   @default(0)
+  startedAt                DateTime              @default(now())
+  endedAt                  DateTime?
+  pausedAt                 DateTime?
+  accumulatedPausedSeconds Int                   @default(0)
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
@@ -236,6 +239,21 @@ model PomodoroSession {
   @@index([userId, startedAt])
   @@index([taskId])
   @@map("pomodoro_sessions")
+}
+
+model Whiteboard {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  version         Int      @default(3)
+  elements        Json
+  backgroundImage String?
+  savedColors     String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("whiteboards")
 }
 
 enum TaskStatus {

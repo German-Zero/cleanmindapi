@@ -14,6 +14,7 @@ import { SettingsModule } from './settings/settings.module';
 import config from './shared/infrastructure/config';
 import { NotificationModule } from './notifications/notification.module';
 import { PomodoroModule } from './pomodoro/pomodoro.module';
+import { WhiteboardModule } from './whiteboard/whiteboard.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PomodoroModule } from './pomodoro/pomodoro.module';
     DashboardModule,
     NotificationModule,
     PomodoroModule,
+    WhiteboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,7 +4,7 @@
 
 ✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/nest?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
 
 ## Run tasks
 
@@ -105,6 +105,8 @@ GET   /api/pomodoro/settings
 PATCH /api/pomodoro/settings
 POST  /api/pomodoro/sessions
 GET   /api/pomodoro/sessions/active
+PATCH /api/pomodoro/sessions/:id/pause
+PATCH /api/pomodoro/sessions/:id/resume
 PATCH /api/pomodoro/sessions/:id/complete
 PATCH /api/pomodoro/sessions/:id/interrupt
 PATCH /api/pomodoro/sessions/:id/cancel
@@ -120,7 +122,7 @@ Start a session with an optional owned task and break type:
 }
 ```
 
-The response contains `startedAt`, `plannedFocusSeconds`, and `plannedBreakSeconds`. The frontend should persist that response and calculate the countdown from timestamps so background tabs do not make the timer drift. Complete or interrupt the session with the measured durations:
+The response contains `startedAt`, `plannedFocusSeconds`, `plannedBreakSeconds`, `pausedAt`, and `accumulatedPausedSeconds`. The frontend calculates the countdown from those persisted timestamps so background tabs do not make the timer drift. Complete or interrupt the session with the measured durations:
 
 ```json
 {
@@ -130,6 +132,26 @@ The response contains `startedAt`, `plannedFocusSeconds`, and `plannedBreakSecon
 ```
 
 Only one active session is allowed per user. Dashboard responses include a small `pomodoro` summary with today's focused seconds, break seconds, and completed sessions. The API deliberately avoids streaks, rankings, and productivity scores.
+
+## Whiteboard API
+
+The authenticated Whiteboard API stores one versioned document per user, including the five custom colors:
+
+```text
+GET /api/whiteboard
+PUT /api/whiteboard
+```
+
+`GET` returns an empty version 3 document when the user has not saved one yet. `PUT` replaces the document using last-write-wins semantics:
+
+```json
+{
+  "version": 3,
+  "elements": [],
+  "backgroundImage": null,
+  "savedColors": ["#8B5CF6"]
+}
+```
 
 ## Browser access and CORS
 
@@ -216,12 +238,13 @@ Nx Console is an editor extension that enriches your developer experience. It le
 
 Learn more:
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
+- [Learn more about this workspace setup](https://nx.dev/nx-api/nest?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
 And join the Nx community:
+
 - [Discord](https://go.nx.dev/community)
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)

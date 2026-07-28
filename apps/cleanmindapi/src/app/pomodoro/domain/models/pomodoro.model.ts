@@ -32,6 +32,8 @@ export interface PomodoroSession {
   actualBreakSeconds: number;
   startedAt: Date;
   endedAt: Date | null;
+  pausedAt: Date | null;
+  accumulatedPausedSeconds: number;
 }
 
 export interface PomodoroDailySummary {

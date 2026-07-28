@@ -22,17 +22,41 @@ export interface FinishPomodoroSessionData {
   endedAt: Date;
 }
 
+export interface UpdatePomodoroPauseData {
+  pausedAt: Date | null;
+  accumulatedPausedSeconds: number;
+}
+
 export abstract class PomodoroRepository {
   abstract findUserTimezone(userId: string): Promise<string>;
-  abstract findSettingsByUserId(userId: string): Promise<PomodoroSettings | null>;
-  abstract upsertSettings(userId: string, settings: PomodoroSettingsUpdate): Promise<PomodoroSettings>;
+  abstract findSettingsByUserId(
+    userId: string,
+  ): Promise<PomodoroSettings | null>;
+  abstract upsertSettings(
+    userId: string,
+    settings: PomodoroSettingsUpdate,
+  ): Promise<PomodoroSettings>;
   abstract findActiveByUserId(userId: string): Promise<PomodoroSession | null>;
-  abstract findSessionByIdAndUserId(id: string, userId: string): Promise<PomodoroSession | null>;
-  abstract createSession(data: CreatePomodoroSessionData): Promise<PomodoroSession>;
+  abstract findSessionByIdAndUserId(
+    id: string,
+    userId: string,
+  ): Promise<PomodoroSession | null>;
+  abstract createSession(
+    data: CreatePomodoroSessionData,
+  ): Promise<PomodoroSession>;
+  abstract updateActiveSessionPause(
+    id: string,
+    userId: string,
+    data: UpdatePomodoroPauseData,
+  ): Promise<PomodoroSession | null>;
   abstract finishActiveSession(
     id: string,
     userId: string,
     data: FinishPomodoroSessionData,
   ): Promise<PomodoroSession | null>;
-  abstract findEndedBetween(userId: string, from: Date, to: Date): Promise<PomodoroSession[]>;
+  abstract findEndedBetween(
+    userId: string,
+    from: Date,
+    to: Date,
+  ): Promise<PomodoroSession[]>;
 }

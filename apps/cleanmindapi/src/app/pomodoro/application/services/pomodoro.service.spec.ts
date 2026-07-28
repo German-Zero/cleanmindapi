@@ -32,19 +32,26 @@ describe('PomodoroService', () => {
     actualBreakSeconds: 0,
     startedAt: new Date('2026-07-21T12:00:00.000Z'),
     endedAt: null,
+    pausedAt: null,
+    accumulatedPausedSeconds: 0,
   };
 
-  function createService(overrides: {
-    repository?: Partial<PomodoroRepository>;
-    tasks?: Partial<TaskRepository>;
-  } = {}) {
+  function createService(
+    overrides: {
+      repository?: Partial<PomodoroRepository>;
+      tasks?: Partial<TaskRepository>;
+    } = {},
+  ) {
     const repository = {
-      findUserTimezone: jest.fn().mockResolvedValue('America/Argentina/Cordoba'),
+      findUserTimezone: jest
+        .fn()
+        .mockResolvedValue('America/Argentina/Cordoba'),
       findSettingsByUserId: jest.fn().mockResolvedValue(settings),
       upsertSettings: jest.fn(),
       findActiveByUserId: jest.fn().mockResolvedValue(null),
       findSessionByIdAndUserId: jest.fn(),
       createSession: jest.fn().mockResolvedValue(activeSession),
+      updateActiveSessionPause: jest.fn().mockResolvedValue(activeSession),
       finishActiveSession: jest.fn(),
       findEndedBetween: jest.fn().mockResolvedValue([]),
       ...overrides.repository,
@@ -99,6 +106,54 @@ describe('PomodoroService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('persists when an active session is paused', async () => {
+    const now = new Date('2026-07-21T12:05:00.000Z');
+    const { service, repository } = createService({
+      repository: {
+        findSessionByIdAndUserId: jest.fn().mockResolvedValue(activeSession),
+      },
+    });
+
+    await service.pauseSession('user-id', 'session-id', now);
+
+    expect(repository.updateActiveSessionPause).toHaveBeenCalledWith(
+      'session-id',
+      'user-id',
+      {
+        pausedAt: now,
+        accumulatedPausedSeconds: 0,
+      },
+    );
+  });
+
+  it('adds the paused duration when an active session resumes', async () => {
+    const pausedAt = new Date('2026-07-21T12:05:00.000Z');
+    const { service, repository } = createService({
+      repository: {
+        findSessionByIdAndUserId: jest.fn().mockResolvedValue({
+          ...activeSession,
+          pausedAt,
+          accumulatedPausedSeconds: 20,
+        }),
+      },
+    });
+
+    await service.resumeSession(
+      'user-id',
+      'session-id',
+      new Date('2026-07-21T12:06:10.500Z'),
+    );
+
+    expect(repository.updateActiveSessionPause).toHaveBeenCalledWith(
+      'session-id',
+      'user-id',
+      {
+        pausedAt: null,
+        accumulatedPausedSeconds: 90,
+      },
+    );
+  });
+
   it('builds neutral daily statistics from completed and interrupted focus', async () => {
     const sessions: PomodoroSession[] = [
       {
@@ -135,11 +190,13 @@ describe('PomodoroService', () => {
       breakSeconds: 300,
       completedSessions: 1,
     });
-    expect(summary.period).toEqual(expect.objectContaining({
-      completedSessions: 1,
-      interruptedSessions: 1,
-      focusSeconds: 2100,
-    }));
+    expect(summary.period).toEqual(
+      expect.objectContaining({
+        completedSessions: 1,
+        interruptedSessions: 1,
+        focusSeconds: 2100,
+      }),
+    );
     expect(summary.daily).toHaveLength(7);
   });
 });

@@ -46,9 +46,9 @@ export class PomodoroService {
   async getSettings(userId: string): Promise<PomodoroSettings> {
     const current = await this.repository.findSettingsByUserId(userId);
 
-    return current ?? this.repository.upsertSettings(
-      userId,
-      PomodoroService.DEFAULT_SETTINGS,
+    return (
+      current ??
+      this.repository.upsertSettings(userId, PomodoroService.DEFAULT_SETTINGS)
     );
   }
 
@@ -90,9 +90,10 @@ export class PomodoroService {
     }
 
     const settings = await this.getSettings(userId);
-    const breakMinutes = breakType === PomodoroBreakType.LONG
-      ? settings.longBreakMinutes
-      : settings.shortBreakMinutes;
+    const breakMinutes =
+      breakType === PomodoroBreakType.LONG
+        ? settings.longBreakMinutes
+        : settings.shortBreakMinutes;
 
     return this.repository.createSession({
       userId,
@@ -105,6 +106,46 @@ export class PomodoroService {
 
   async getActiveSession(userId: string): Promise<PomodoroSession | null> {
     return this.repository.findActiveByUserId(userId);
+  }
+
+  async pauseSession(
+    userId: string,
+    sessionId: string,
+    now = new Date(),
+  ): Promise<PomodoroSession> {
+    const session = await this.getOwnedActiveSession(userId, sessionId);
+
+    if (session.pausedAt) {
+      throw new ConflictException('La sesión Pomodoro ya está pausada');
+    }
+
+    return (await this.repository.updateActiveSessionPause(sessionId, userId, {
+      pausedAt: now,
+      accumulatedPausedSeconds: session.accumulatedPausedSeconds,
+    }))!;
+  }
+
+  async resumeSession(
+    userId: string,
+    sessionId: string,
+    now = new Date(),
+  ): Promise<PomodoroSession> {
+    const session = await this.getOwnedActiveSession(userId, sessionId);
+
+    if (!session.pausedAt) {
+      throw new ConflictException('La sesión Pomodoro no está pausada');
+    }
+
+    const pausedSeconds = Math.max(
+      0,
+      Math.floor((now.getTime() - session.pausedAt.getTime()) / 1000),
+    );
+
+    return (await this.repository.updateActiveSessionPause(sessionId, userId, {
+      pausedAt: null,
+      accumulatedPausedSeconds:
+        session.accumulatedPausedSeconds + pausedSeconds,
+    }))!;
   }
 
   async completeSession(
@@ -163,7 +204,7 @@ export class PomodoroService {
     const from = new Date(now.getTime() - (days + 1) * 24 * 60 * 60 * 1000);
     const sessions = await this.repository.findEndedBetween(userId, from, now);
     const daily = this.createDailyBuckets(now, days, timezone);
-    const byDate = new Map(daily.map(item => [item.date, item]));
+    const byDate = new Map(daily.map((item) => [item.date, item]));
 
     for (const session of sessions) {
       if (!session.endedAt) continue;
@@ -188,17 +229,39 @@ export class PomodoroService {
       },
       period: {
         days,
-        focusSeconds: sessions.reduce((sum, item) => sum + item.actualFocusSeconds, 0),
-        breakSeconds: sessions.reduce((sum, item) => sum + item.actualBreakSeconds, 0),
+        focusSeconds: sessions.reduce(
+          (sum, item) => sum + item.actualFocusSeconds,
+          0,
+        ),
+        breakSeconds: sessions.reduce(
+          (sum, item) => sum + item.actualBreakSeconds,
+          0,
+        ),
         completedSessions: sessions.filter(
-          item => item.status === PomodoroSessionStatus.COMPLETED,
+          (item) => item.status === PomodoroSessionStatus.COMPLETED,
         ).length,
         interruptedSessions: sessions.filter(
-          item => item.status === PomodoroSessionStatus.INTERRUPTED,
+          (item) => item.status === PomodoroSessionStatus.INTERRUPTED,
         ).length,
       },
       daily,
     };
+  }
+
+  private async getOwnedActiveSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<PomodoroSession> {
+    const session = await this.repository.findSessionByIdAndUserId(
+      sessionId,
+      userId,
+    );
+
+    if (!session || session.status !== PomodoroSessionStatus.ACTIVE) {
+      throw new NotFoundException('Sesión Pomodoro activa no encontrada');
+    }
+
+    return session;
   }
 
   private async finishSession(
@@ -208,12 +271,16 @@ export class PomodoroService {
     actualFocusSeconds: number,
     actualBreakSeconds: number,
   ): Promise<PomodoroSession> {
-    const session = await this.repository.finishActiveSession(sessionId, userId, {
-      status,
-      actualFocusSeconds,
-      actualBreakSeconds,
-      endedAt: new Date(),
-    });
+    const session = await this.repository.finishActiveSession(
+      sessionId,
+      userId,
+      {
+        status,
+        actualFocusSeconds,
+        actualBreakSeconds,
+        endedAt: new Date(),
+      },
+    );
 
     if (!session) {
       throw new NotFoundException('Sesión Pomodoro activa no encontrada');
@@ -232,11 +299,9 @@ export class PomodoroService {
       .map(Number);
 
     return Array.from({ length: days }, (_, index) => {
-      const date = new Date(Date.UTC(
-        year,
-        month - 1,
-        day - (days - 1 - index),
-      ));
+      const date = new Date(
+        Date.UTC(year, month - 1, day - (days - 1 - index)),
+      );
 
       return {
         date: date.toISOString().slice(0, 10),
@@ -255,7 +320,7 @@ export class PomodoroService {
       day: '2-digit',
     }).formatToParts(date);
     const value = (type: Intl.DateTimeFormatPartTypes): string =>
-      parts.find(part => part.type === type)?.value ?? '';
+      parts.find((part) => part.type === type)?.value ?? '';
 
     return `${value('year')}-${value('month')}-${value('day')}`;
   }

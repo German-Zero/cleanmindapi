@@ -32,7 +32,9 @@ export class PomodoroController {
   constructor(private readonly pomodoro: PomodoroService) {}
 
   @Get('settings')
-  async getSettings(@CurrentUser() user: JwtPayload): Promise<PomodoroSettings> {
+  async getSettings(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<PomodoroSettings> {
     return this.pomodoro.getSettings(user.sub);
   }
 
@@ -62,6 +64,22 @@ export class PomodoroController {
       request.taskId ?? null,
       request.breakType ?? PomodoroBreakType.SHORT,
     );
+  }
+
+  @Patch('sessions/:id/pause')
+  async pauseSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<PomodoroSession> {
+    return this.pomodoro.pauseSession(user.sub, id);
+  }
+
+  @Patch('sessions/:id/resume')
+  async resumeSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<PomodoroSession> {
+    return this.pomodoro.resumeSession(user.sub, id);
   }
 
   @Patch('sessions/:id/complete')
