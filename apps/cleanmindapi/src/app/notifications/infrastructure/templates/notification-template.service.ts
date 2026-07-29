@@ -34,6 +34,8 @@ export class NotificationTemplateService {
   }
 
   renderWhatsapp(notification: Notification): string {
+    this.ensureChannelSupports(notification.type);
+
     return this.handlebars.renderChannel(
       'whatsapp',
       MAIL_TEMPLATE_BY_NOTIFICATION_TYPE[notification.type],
@@ -42,11 +44,19 @@ export class NotificationTemplateService {
   }
 
   renderDiscord(notification: Notification): string {
+    this.ensureChannelSupports(notification.type);
+
     return this.handlebars.renderChannel(
       'discord',
       MAIL_TEMPLATE_BY_NOTIFICATION_TYPE[notification.type],
       this.context(notification),
     );
+  }
+
+  private ensureChannelSupports(type: NotificationType): void {
+    if (type === NotificationType.VERIFY_EMAIL) {
+      throw new Error('La verificación de email solo puede enviarse por email.');
+    }
   }
 
   private context(notification: Notification): Record<string, unknown> {

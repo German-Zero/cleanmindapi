@@ -46,7 +46,7 @@ describe('NotificationTemplateService', () => {
     ),
   ];
 
-  it.each(notifications)('renders every channel for $type', (notification) => {
+  it.each(notifications.slice(1))('renders every configured channel for $type', (notification) => {
     const email = service.renderEmail(notification);
     const whatsapp = service.renderWhatsapp(notification);
     const discord = service.renderDiscord(notification);
@@ -60,16 +60,21 @@ describe('NotificationTemplateService', () => {
 
   it('shows the real fifteen-minute expiration for verification and password reset', () => {
     const verificationEmail = service.renderEmail(notifications[0]);
-    const verificationDiscord = service.renderDiscord(notifications[0]);
-    const verificationWhatsapp = service.renderWhatsapp(notifications[0]);
     const passwordEmail = service.renderEmail(notifications[1]);
     const passwordDiscord = service.renderDiscord(notifications[1]);
 
     expect(verificationEmail).toContain('15 minutos');
-    expect(verificationDiscord).toContain('15 minutos');
-    expect(verificationWhatsapp).toContain('15 minutos');
     expect(passwordEmail).toContain('15 minutos');
     expect(passwordDiscord).toContain('15 minutos');
+  });
+
+  it('keeps email verification exclusive to email', () => {
+    expect(() => service.renderDiscord(notifications[0])).toThrow(
+      'solo puede enviarse por email',
+    );
+    expect(() => service.renderWhatsapp(notifications[0])).toThrow(
+      'solo puede enviarse por email',
+    );
   });
 
   it('passes shared branding into the email body and button', () => {
