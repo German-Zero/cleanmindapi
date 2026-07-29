@@ -1,10 +1,10 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
 import { SharedMailModule } from '../../mail/shared-mail.module';
-import { ResendMailAdapter } from "./email-resend.adapter";
+import { BrevoMailAdapter } from './email-brevo.adapter';
 
 @Module({
   imports: [SharedMailModule],
-  providers: [ResendMailAdapter],
-  exports: [ResendMailAdapter],
+  providers: [BrevoMailAdapter],
+  exports: [BrevoMailAdapter],
 })
 export class MailModule {}

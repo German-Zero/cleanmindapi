@@ -35,7 +35,7 @@ import { TokenGeneratorService } from "./infrastructure/services/token-generator
 import { RefreshTokenValidationService } from "./domain/services/refresh-token-validation.service";
 import { JwtServiceService } from "./infrastructure/services/jwt.service";
 import { Sha256TokenHasherService } from "./infrastructure/services/sha256-token-hasher.service";
-import { ResendMailAdapter } from "../shared/infrastructure/mail/email-resend.adapter";
+import { BrevoMailAdapter } from "../shared/infrastructure/mail/email-brevo.adapter";
 
 import { ResetPasswordPort } from "./application/ports/inbound/reset-password.port";
 import { LogoutPort } from "./application/ports/inbound/logout.port";
@@ -247,10 +247,9 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
       useExisting: JwtServiceService,
     },
 
-    ResendMailAdapter,
     {
       provide: MailPort,
-      useExisting: ResendMailAdapter,
+      useExisting: BrevoMailAdapter,
     },
   ],
   exports: [
