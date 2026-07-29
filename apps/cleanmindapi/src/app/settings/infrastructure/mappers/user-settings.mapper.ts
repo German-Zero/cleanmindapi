@@ -2,12 +2,14 @@ import {
   Prisma,
   UserSettings as PrismaUserSettings,
   Theme as PrismaTheme,
+  BackgroundMotion as PrismaBackgroundMotion,
   NotificationFrequency as PrismaNotificationFrequency,
   MotivationFrequency as PrismaMotivationFrequency,
 } from '@prisma/client'
 
 import { UserSettings } from '../../domain/entities/user-settings.entity';
 import { Theme } from '../../domain/enums/theme.enum';
+import { BackgroundMotion } from '../../domain/enums/background-motion.enum';
 import { NotificationFrequency } from '../../domain/enums/notification-frequency.enum';
 import { MotivationFrequency } from '../../domain/enums/motivation-frequency.enum';
 
@@ -20,6 +22,8 @@ export class UserSettingsMapper {
       userId: settings.userId,
 
       theme: settings.theme as Theme,
+
+      backgroundMotion: settings.backgroundMotion as BackgroundMotion,
 
       emailNotifications:
         settings.emailNotifications,
@@ -53,6 +57,9 @@ export class UserSettingsMapper {
       theme:
         settings.theme as PrismaTheme,
 
+      backgroundMotion:
+        settings.backgroundMotion as PrismaBackgroundMotion,
+
       emailNotifications:
         settings.emailNotifications,
 
@@ -82,6 +89,9 @@ export class UserSettingsMapper {
     return {
       theme:
         settings.theme as PrismaTheme,
+
+      backgroundMotion:
+        settings.backgroundMotion as PrismaBackgroundMotion,
 
       emailNotifications:
         settings.emailNotifications,

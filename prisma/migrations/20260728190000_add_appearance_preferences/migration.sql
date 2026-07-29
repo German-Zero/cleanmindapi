@@ -1,0 +1,13 @@
+ALTER TYPE "Theme" ADD VALUE 'SOFT_DAWN';
+ALTER TYPE "Theme" ADD VALUE 'MINT_BREEZE';
+ALTER TYPE "Theme" ADD VALUE 'CLEAR_SKY';
+
+CREATE TYPE "BackgroundMotion" AS ENUM (
+    'NONE',
+    'STAR_RAIN',
+    'ORBITAL_GALAXY',
+    'SOFT_AURORA'
+);
+
+ALTER TABLE "user_settings"
+ADD COLUMN "backgroundMotion" "BackgroundMotion" NOT NULL DEFAULT 'NONE';

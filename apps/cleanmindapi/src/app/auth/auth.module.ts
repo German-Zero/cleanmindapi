@@ -20,6 +20,8 @@ import { LoginGoogleUseCase } from "./application/use-cases/login-google.usecase
 import { VerifyEmailUseCase } from "./application/use-cases/verify-email.usecase";
 import { ChangePasswordUseCase } from "./application/use-cases/change-password.usecase";
 import { SetPasswordUseCase } from "./application/use-cases/set-password.usecase";
+import { ResendVerificationEmailUseCase } from "./application/use-cases/resend-verification-email.usecase";
+import { DeleteAccountUseCase } from "./application/use-cases/delete-account.usecase";
 
 import { PrismaUserRepository } from "../users/infrastructure/repositories/prisma-user.repository";
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
@@ -33,7 +35,7 @@ import { TokenGeneratorService } from "./infrastructure/services/token-generator
 import { RefreshTokenValidationService } from "./domain/services/refresh-token-validation.service";
 import { JwtServiceService } from "./infrastructure/services/jwt.service";
 import { Sha256TokenHasherService } from "./infrastructure/services/sha256-token-hasher.service";
-import { ResendMailAdapter } from "../shared/infrastructure/mail/email-resend.adapter";
+import { BrevoMailAdapter } from "../shared/infrastructure/mail/email-brevo.adapter";
 
 import { ResetPasswordPort } from "./application/ports/inbound/reset-password.port";
 import { LogoutPort } from "./application/ports/inbound/logout.port";
@@ -51,6 +53,8 @@ import { ForgotPasswordPort } from "./application/ports/inbound/forgot-password.
 import { VerifyEmailPort } from "./application/ports/inbound/verify-email.port";
 import { ChangePasswordPort } from "./application/ports/inbound/change-password.port";
 import { SetPasswordPort } from "./application/ports/inbound/set-password.port";
+import { ResendVerificationEmailPort } from "./application/ports/inbound/resend-verification-email.port";
+import { DeleteAccountPort } from "./application/ports/inbound/delete-account.port";
 
 import { UserRepository } from "../users/domain/repositories/user.repository";
 import { RefreshTokenRepository } from "./domain/repositories/refresh-token.repository";
@@ -95,6 +99,12 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
     GoogleStrategy,
 
     // Use-Cases
+
+    DeleteAccountUseCase,
+    {
+      provide: DeleteAccountPort,
+      useExisting: DeleteAccountUseCase,
+    },
 
     SetPasswordUseCase,
     {
@@ -160,6 +170,12 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
     {
       provide: VerifyEmailPort,
       useExisting: VerifyEmailUseCase,
+    },
+
+    ResendVerificationEmailUseCase,
+    {
+      provide: ResendVerificationEmailPort,
+      useExisting: ResendVerificationEmailUseCase,
     },
 
     // Repositories
@@ -231,12 +247,13 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
       useExisting: JwtServiceService,
     },
 
-    ResendMailAdapter,
     {
       provide: MailPort,
-      useExisting: ResendMailAdapter,
+      useExisting: BrevoMailAdapter,
     },
   ],
-  exports: []
+  exports: [
+    GetCurrentUserPort,
+  ]
 })
 export class AuthModule {}

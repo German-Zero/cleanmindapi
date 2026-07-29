@@ -20,6 +20,6 @@ export class RefreshTokenValidationService {
       }
     }
 
-    throw new UnauthorizedException('Invalid refresh token.')
+    throw new UnauthorizedException('Tu sesión venció. Inicia sesión nuevamente.')
   }
 }

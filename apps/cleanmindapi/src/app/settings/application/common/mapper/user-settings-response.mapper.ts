@@ -7,6 +7,7 @@ export class UserSettingsResponseMapper {
   ): UserSettingsResponse {
     return {
       theme: settings.theme,
+      backgroundMotion: settings.backgroundMotion,
       emailNotifications: settings.emailNotifications,
       whatsappNotifications: settings.whatsappNotifications,
       discordNotifications: settings.discordNotifications,

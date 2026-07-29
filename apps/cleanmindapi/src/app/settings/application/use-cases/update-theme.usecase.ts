@@ -16,7 +16,10 @@ export class UpdateThemeUseCase implements UpdateThemePort {
   async execute(command: UpdateThemeCommand): Promise<UserSettingsResponse> {
     const settings = await this.settingsLodaer.load(command.userId)
 
-    settings.changeTheme(command.theme)
+    settings.changeAppearance(
+      command.theme,
+      command.backgroundMotion,
+    )
 
     const updated = await this.repository.update(settings)
 

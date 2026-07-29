@@ -1,13 +1,16 @@
 
 import { CurrentUserResponse } from "../../api/response/current-user.response";
-import { JwtPayload } from "../../application/common/jwt-payload";
+import { User } from "../../../users/domain/entities/user.entity";
 
 export class CurrentUserMapper {
-  static toResponse(payload: JwtPayload): CurrentUserResponse {
+  static toResponse(user: User): CurrentUserResponse {
     return {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      id: user.id,
+      name: user.name,
+      email: user.email.getValue(),
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      hasPassword: Boolean(user.passwordHash),
     }
   }
 }

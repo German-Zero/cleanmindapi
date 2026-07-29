@@ -31,7 +31,7 @@ export class GoogleStrategy extends PassportStrategy(
     if (!email) {
       return done(
         new UnauthorizedException(
-          'Google account has no email.',
+          'No pudimos obtener el email de tu cuenta de Google.',
         ),
         false,
       );

@@ -66,6 +66,7 @@ import { DiscordServerWebhookService } from './infrastructure/discord/discord-se
     }
   ],
   exports: [
+    NotificationFactory,
     NotificationDispatcherService,
     DiscordServerWebhookService,
   ]

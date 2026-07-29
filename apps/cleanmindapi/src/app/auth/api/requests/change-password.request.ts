@@ -1,14 +1,14 @@
 import { IsString, MinLength } from "class-validator";
 
 export class ChangePasswordRequest {
-  @IsString()
+  @IsString({ message: 'Ingresa tu contraseña actual.' })
   currentPassword!: string;
 
-  @IsString()
-  @MinLength(8)
+  @IsString({ message: 'Ingresa una contraseña nueva válida.' })
+  @MinLength(8, { message: 'La contraseña nueva debe tener al menos 8 caracteres.' })
   newPassword!: string;
 
-  @IsString()
-  @MinLength(8)
+  @IsString({ message: 'Confirma la contraseña nueva.' })
+  @MinLength(8, { message: 'La confirmación debe tener al menos 8 caracteres.' })
   confirmPassword!: string;
 }

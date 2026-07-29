@@ -14,13 +14,13 @@ export class SetPasswordUseCase implements SetPasswordPort {
   ) {}
 
   async execute(command: SetPasswordCommand): Promise<void> {
-    if (command.password !== command.confirmPassword) throw new BadRequestException('Passowrd do not match')
+    if (command.password !== command.confirmPassword) throw new BadRequestException('Las contraseñas no coinciden.')
 
     const user = await this.userRepository.findById(command.userId)
 
     if (!user) throw new UserNotFoundException()
 
-    if (user.passwordHash) throw new BadRequestException('Password already exists.')
+    if (user.passwordHash) throw new BadRequestException('La cuenta ya tiene una contraseña local.')
 
     const hash = await this.passwordHasher.hash(new Password(command.password))
 

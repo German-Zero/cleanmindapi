@@ -35,6 +35,7 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   lastLoginAt         DateTime?
+  termsAcceptedAt     DateTime?
   refreshTokens       RefreshToken[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
@@ -44,6 +45,9 @@ model User {
   discordOAuthStates  DiscordOAuthState[]
   mfaAuthenticator    MfaAuthenticator?
   mfaChallenges       MfaChallenge[]
+  pomodoroSettings    PomodoroSettings?
+  pomodoroSessions    PomodoroSession[]
+  whiteboard          Whiteboard?
 
   @@map("users")
 }
@@ -77,14 +81,14 @@ model MfaRecoveryCode {
 }
 
 model MfaChallenge {
-  id         String    @id @default(uuid())
-  tokenHash  String    @unique
-  userId     String
-  expiresAt  DateTime
-  attempts   Int       @default(0)
+  id            String    @id @default(uuid())
+  tokenHash     String    @unique
+  userId        String
+  expiresAt     DateTime
+  attempts      Int       @default(0)
   primaryMethod String
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
+  consumedAt    DateTime?
+  createdAt     DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -178,9 +182,79 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pomodoroSessions PomodoroSession[]
 
   @@index([userId])
+}
+
+enum PomodoroSessionStatus {
+  ACTIVE
+  COMPLETED
+  INTERRUPTED
+  CANCELLED
+}
+
+enum PomodoroBreakType {
+  SHORT
+  LONG
+}
+
+model PomodoroSettings {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  focusMinutes            Int      @default(25)
+  shortBreakMinutes       Int      @default(5)
+  longBreakMinutes        Int      @default(15)
+  sessionsBeforeLongBreak Int      @default(4)
+  autoStartBreak          Boolean  @default(false)
+  dailyGoalMinutes        Int?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pomodoro_settings")
+}
+
+model PomodoroSession {
+  id                       String                @id @default(uuid())
+  userId                   String
+  taskId                   String?
+  status                   PomodoroSessionStatus @default(ACTIVE)
+  breakType                PomodoroBreakType     @default(SHORT)
+  plannedFocusSeconds      Int
+  plannedBreakSeconds      Int
+  actualFocusSeconds       Int                   @default(0)
+  actualBreakSeconds       Int                   @default(0)
+  startedAt                DateTime              @default(now())
+  endedAt                  DateTime?
+  pausedAt                 DateTime?
+  accumulatedPausedSeconds Int                   @default(0)
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startedAt])
+  @@index([taskId])
+  @@map("pomodoro_sessions")
+}
+
+model Whiteboard {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  version         Int      @default(3)
+  elements        Json
+  backgroundImage String?
+  savedColors     String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("whiteboards")
 }
 
 enum TaskStatus {
@@ -200,7 +274,8 @@ model UserSettings {
   id     String @id @default(uuid())
   userId String @unique
 
-  theme Theme @default(LUNAR_MIND)
+  theme            Theme            @default(LUNAR_MIND)
+  backgroundMotion BackgroundMotion @default(NONE)
 
   emailNotifications    Boolean @default(true)
   whatsappNotifications Boolean @default(false)
@@ -211,13 +286,14 @@ model UserSettings {
   motivationalMessages Boolean             @default(true)
   motivationFrequency  MotivationFrequency @default(DAILY)
 
-  locale String @default("es-AR")
+  locale   String @default("es-AR")
   timezone String @default("America/Argentina/Cordoba")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_settings")
 }
 
@@ -225,6 +301,16 @@ enum Theme {
   LUNAR_MIND
   DEEP_SERENITY
   CALM_TECH
+  SOFT_DAWN
+  MINT_BREEZE
+  CLEAR_SKY
+}
+
+enum BackgroundMotion {
+  NONE
+  STAR_RAIN
+  ORBITAL_GALAXY
+  SOFT_AURORA
 }
 
 enum NotificationFrequency {

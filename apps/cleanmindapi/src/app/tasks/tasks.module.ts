@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { UsersModule } from "../users/users.module";
+import { NotificationModule } from "../notifications/notification.module";
 
 import { TaskController } from "./api/controllers/task.controller"
 
@@ -32,7 +33,8 @@ import { UserRepository } from "../users/domain/repositories/user.repository";
 
 @Module({
   imports: [
-    UsersModule
+    UsersModule,
+    NotificationModule,
   ],
   controllers: [
     TaskController,

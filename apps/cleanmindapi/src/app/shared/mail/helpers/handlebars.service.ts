@@ -20,11 +20,14 @@ export class HandlebarsService {
   renderEmail(template: MailTemplate, context: TemplateContext): string {
     this.registerPartials();
 
-    const body = this.compile(this.registry.get(template), context);
-
-    return this.compile(this.registry.getLayout(), {
+    const renderContext = {
       ...this.sharedContext(),
       ...context,
+    };
+    const body = this.compile(this.registry.get(template), renderContext);
+
+    return this.compile(this.registry.getLayout(), {
+      ...renderContext,
       body,
     });
   }
@@ -34,13 +37,10 @@ export class HandlebarsService {
     template: MailTemplate,
     context: TemplateContext,
   ): string {
-    return this.compile(
-      this.registry.getChannelTemplate(channel, template),
-      {
-        ...this.sharedContext(),
-        ...context,
-      },
-    ).trim();
+    return this.compile(this.registry.getChannelTemplate(channel, template), {
+      ...this.sharedContext(),
+      ...context,
+    }).trim();
   }
 
   private compile(path: string, context: TemplateContext): string {
@@ -65,7 +65,8 @@ export class HandlebarsService {
     return {
       appName: this.config.get<string>('auth.mail.appName') ?? 'CleanMind',
       supportEmail:
-        this.config.get<string>('auth.mail.supportEmail') ?? 'support@cleanmind.app',
+        this.config.get<string>('auth.mail.supportEmail') ??
+        'support@cleanmind.app',
       logoUrl: this.config.get<string>('auth.mail.logoUrl'),
       primaryColor: '#7C3AED',
       year: new Date().getFullYear(),

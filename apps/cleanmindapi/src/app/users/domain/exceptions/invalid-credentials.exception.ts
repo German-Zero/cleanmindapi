@@ -1,5 +1,7 @@
-export class InvalidCredentialsException extends Error {
+import { UnauthorizedException } from "@nestjs/common";
+
+export class InvalidCredentialsException extends UnauthorizedException {
   constructor() {
-    super('Invalid Credentials');
+    super('El email o la contraseña son incorrectos.');
   }
 }

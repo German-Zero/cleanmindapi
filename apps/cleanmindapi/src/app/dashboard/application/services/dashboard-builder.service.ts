@@ -3,10 +3,11 @@ import { DashboardModel } from "../../domain/models/dashboard.model";
 import { Task } from "../../../tasks/domain/entities/task.entity";
 import { TaskStatus } from "../../../tasks/domain/enums/task-status.enum";
 import { TaskQuadrant } from "@prisma/client";
+import { PomodoroSummary } from "../../../pomodoro/domain/models/pomodoro.model";
 
 @Injectable()
 export class DashboardBuilderService {
-  build(tasks: Task[]): DashboardModel {
+  build(tasks: Task[], pomodoro: PomodoroSummary['today']): DashboardModel {
     const now = new Date();
 
     const startOfToday = this.startOfDay(now);
@@ -75,6 +76,8 @@ export class DashboardBuilderService {
           task.dueDate > endOfToday &&
           task.status !== TaskStatus.COMPLETED,
       ),
+
+      pomodoro,
     };
   }
 

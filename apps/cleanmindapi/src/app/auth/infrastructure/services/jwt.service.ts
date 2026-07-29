@@ -93,7 +93,7 @@ async generateTokens(
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     const payload = await this.jwtService.verifyAsync<JwtPayload>(token)
 
-    if (payload.type !== 'access') throw new UnauthorizedException('Invalid access token')
+    if (payload.type !== 'access') throw new UnauthorizedException('Tu sesión no es válida. Inicia sesión nuevamente.')
 
     return payload
   }
@@ -105,7 +105,7 @@ async generateTokens(
       }
     )
 
-    if (payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token')
+    if (payload.type !== 'refresh') throw new UnauthorizedException('Tu sesión no es válida. Inicia sesión nuevamente.')
 
     return payload
   }

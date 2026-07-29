@@ -1,6 +1,6 @@
 import { IsEmail } from "class-validator";
 
 export class ForgotPasswordRequest {
-  @IsEmail()
+  @IsEmail({}, { message: 'Ingresa un email válido.' })
   email!: string;
 }

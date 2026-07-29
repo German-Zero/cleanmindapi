@@ -42,7 +42,8 @@ export class SettingsController {
   ): Promise<UserSettingsResponse> {
     return this.updateTheme.execute(new UpdateThemeCommand(
       user.sub,
-      req.theme
+      req.theme,
+      req.backgroundMotion,
     ))
   }
 

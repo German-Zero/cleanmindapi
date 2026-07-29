@@ -6,7 +6,9 @@ export class Email {
   constructor(email: string) {
     const normalized = email.trim().toLowerCase();
 
-    if (!Email.isValid(normalized)) throw new BadRequestException('Invalid email')
+    if (!Email.isValid(normalized)) {
+      throw new BadRequestException('Ingresa un email válido.');
+    }
 
     this.value = normalized
   }

@@ -63,6 +63,7 @@ import { UpdateMotivationalPreferencesPort } from "./application/ports/inbound/u
   ],
   exports: [
     UserSettingsRepository,
+    GetSettingsPort,
   ],
 })
 export class SettingsModule {}

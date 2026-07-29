@@ -4,7 +4,7 @@
 
 ✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/nest?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
 
 ## Run tasks
 
@@ -13,6 +13,26 @@ To run the dev server for your app, use:
 ```sh
 npx nx serve cleanmindapi
 ```
+
+## Transactional email
+
+CleanMind sends verification, password recovery, and task notification emails
+through the Brevo transactional email API. Create and verify the sender in Brevo,
+then configure:
+
+```env
+BREVO_API_KEY=xkeysib-your-api-key
+BREVO_API_URL=https://api.brevo.com/v3
+BREVO_TIMEOUT_MS=10000
+MAIL_FROM=germannaz_@hotmail.com
+MAIL_FROM_NAME=CleanMind
+APP_NAME=CleanMind
+SUPPORT_EMAIL=germannaz_@hotmail.com
+```
+
+`MAIL_FROM` must contain only the verified email address. Keep
+`BREVO_API_KEY` outside the repository and configure it as a secret in the
+deployment platform.
 
 ## Discord notifications
 
@@ -94,6 +114,119 @@ When MFA is enabled, local and Google login return this instead of creating a se
 
 Complete login with `POST /api/auth/mfa/verify` and `{ "challengeToken": "...", "code": "123456" }`. A valid response creates the normal access and refresh cookies. Challenges are single-use and limited to the configured number of attempts.
 
+## Pomodoro API
+
+The authenticated Pomodoro API keeps the timer state associated with the current user while the visible countdown remains a frontend responsibility.
+
+Available endpoints:
+
+```text
+GET   /api/pomodoro/settings
+PATCH /api/pomodoro/settings
+POST  /api/pomodoro/sessions
+GET   /api/pomodoro/sessions/active
+PATCH /api/pomodoro/sessions/:id/pause
+PATCH /api/pomodoro/sessions/:id/resume
+PATCH /api/pomodoro/sessions/:id/complete
+PATCH /api/pomodoro/sessions/:id/interrupt
+PATCH /api/pomodoro/sessions/:id/cancel
+GET   /api/pomodoro/summary?days=7
+```
+
+Start a session with an optional owned task and break type:
+
+```json
+{
+  "taskId": "optional-task-uuid",
+  "breakType": "SHORT"
+}
+```
+
+The response contains `startedAt`, `plannedFocusSeconds`, `plannedBreakSeconds`, `pausedAt`, and `accumulatedPausedSeconds`. The frontend calculates the countdown from those persisted timestamps so background tabs do not make the timer drift. Complete or interrupt the session with the measured durations:
+
+```json
+{
+  "actualFocusSeconds": 1500,
+  "actualBreakSeconds": 300
+}
+```
+
+Only one active session is allowed per user. Dashboard responses include a small `pomodoro` summary with today's focused seconds, break seconds, and completed sessions. The API deliberately avoids streaks, rankings, and productivity scores.
+
+## Whiteboard API
+
+The authenticated Whiteboard API stores one versioned document per user, including the five custom colors:
+
+```text
+GET /api/whiteboard
+PUT /api/whiteboard
+```
+
+`GET` returns an empty version 3 document when the user has not saved one yet. `PUT` replaces the document using last-write-wins semantics:
+
+```json
+{
+  "version": 3,
+  "elements": [],
+  "backgroundImage": null,
+  "savedColors": ["#8B5CF6"]
+}
+```
+
+## Browser access and CORS
+
+Direct browser requests are allowed only from configured origins and may include authentication cookies:
+
+```env
+CORS_ORIGINS=http://localhost:3001
+```
+
+Use a comma-separated list in deployed environments, without trailing slashes. The frontend development proxy avoids cross-origin requests, but CORS remains available for direct API access.
+
+## Fly.io deployment
+
+The production image uses Node.js 22 on Debian, builds the Nx application in a
+separate stage, runs as the unprivileged `node` user, and exposes port `8080`.
+Fly runs pending Prisma migrations once before each release.
+
+Install Docker Desktop and `flyctl`, authenticate, and create the app without
+deploying it:
+
+```sh
+fly auth login
+fly apps create cleanmind-api-germannaz
+```
+
+Configure the production secrets. Use the Supabase pooled URL for
+`DATABASE_URL` and the direct connection for `DIRECT_URL`:
+
+```sh
+fly secrets set DATABASE_URL="..." DIRECT_URL="..." JWT_ACCESS_SECRET="..." JWT_REFRESH_SECRET="..."
+fly secrets set FRONTEND_URL="https://your-app.vercel.app" CORS_ORIGINS="https://your-app.vercel.app"
+fly secrets set GOOGLE_CLIENT_ID="..." GOOGLE_CLIENT_SECRET="..." GOOGLE_CALLBACK_URL="https://cleanmind-api-germannaz.fly.dev/api/auth/google/callback"
+fly secrets set BREVO_API_KEY="..." MFA_ENCRYPTION_KEY="..."
+fly secrets set DISCORD_CLIENT_ID="..." DISCORD_CLIENT_SECRET="..." DISCORD_BOT_TOKEN="..."
+fly secrets set DISCORD_REDIRECT_URI="https://cleanmind-api-germannaz.fly.dev/api/notifications/discord/callback" DISCORD_OAUTH_SUCCESS_URL="https://your-app.vercel.app/settings"
+```
+
+Deploy one Machine for the beta:
+
+```sh
+fly deploy --ha=false
+```
+
+The release is accepted only if `npx prisma migrate deploy` succeeds. Fly
+checks `GET /api` before routing traffic to the Machine. Verify it with:
+
+```sh
+fly status
+fly checks list
+fly logs
+```
+
+The app name is globally unique. If `cleanmind-api-germannaz` is unavailable,
+change `app` in `fly.toml` and replace that hostname in the OAuth callback URLs.
+
 To create a production bundle:
 
 ```sh
@@ -169,12 +302,13 @@ Nx Console is an editor extension that enriches your developer experience. It le
 
 Learn more:
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
+- [Learn more about this workspace setup](https://nx.dev/nx-api/nest?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
 And join the Nx community:
+
 - [Discord](https://go.nx.dev/community)
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)

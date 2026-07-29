@@ -2,6 +2,7 @@
 import { NotificationFrequency } from '../enums/notification-frequency.enum';
 import { MotivationFrequency } from '../enums/motivation-frequency.enum';
 import { Theme } from '../enums/theme.enum';
+import { BackgroundMotion } from '../enums/background-motion.enum';
 
 interface UserSettingsProps {
   id?: string;
@@ -9,6 +10,7 @@ interface UserSettingsProps {
   userId: string;
 
   theme: Theme;
+  backgroundMotion: BackgroundMotion;
 
   emailNotifications: boolean;
   whatsappNotifications: boolean;
@@ -29,6 +31,7 @@ export class UserSettings {
   private readonly _userId: string;
 
   private _theme: Theme;
+  private _backgroundMotion: BackgroundMotion;
 
   private _emailNotifications: boolean;
   private _whatsappNotifications: boolean;
@@ -50,6 +53,7 @@ export class UserSettings {
     this._userId = props.userId;
 
     this._theme = props.theme;
+    this._backgroundMotion = props.backgroundMotion;
 
     this._emailNotifications =
       props.emailNotifications;
@@ -83,6 +87,7 @@ export class UserSettings {
       userId,
 
       theme: Theme.LUNAR_MIND,
+      backgroundMotion: BackgroundMotion.NONE,
 
       emailNotifications: true,
       whatsappNotifications: false,
@@ -103,8 +108,12 @@ export class UserSettings {
     return new UserSettings(props);
   }
 
-  changeTheme(theme: Theme): void {
+  changeAppearance(
+    theme: Theme,
+    backgroundMotion = this._backgroundMotion,
+  ): void {
     this._theme = theme;
+    this._backgroundMotion = backgroundMotion;
 
     this.touch();
   }
@@ -156,6 +165,10 @@ export class UserSettings {
 
   get theme(): Theme {
     return this._theme;
+  }
+
+  get backgroundMotion(): BackgroundMotion {
+    return this._backgroundMotion;
   }
 
   get emailNotifications(): boolean {

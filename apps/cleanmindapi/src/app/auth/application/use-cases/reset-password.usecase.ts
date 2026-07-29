@@ -32,7 +32,7 @@ export class ResetPasswordUseCase implements ResetPasswordPort
       resetToken.isUsed
     ) {
       throw new UnauthorizedException(
-        'Invalid reset token',
+        'El enlace de recuperación no es válido o ya venció.',
       );
     }
 
@@ -42,7 +42,9 @@ export class ResetPasswordUseCase implements ResetPasswordPort
       );
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        'El enlace de recuperación no es válido o ya venció.',
+      );
     }
 
     const password = new Password(

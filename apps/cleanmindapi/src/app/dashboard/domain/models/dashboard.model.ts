@@ -1,4 +1,5 @@
 import { Task } from "../../../tasks/domain/entities/task.entity";
+import { PomodoroSummary } from "../../../pomodoro/domain/models/pomodoro.model";
 
 export interface DashboardSummary {
   total: number;
@@ -20,5 +21,6 @@ export interface DashboardModel {
   today: Task[]
   overdue: Task[]
   upcoming: Task[]
+  pomodoro: PomodoroSummary['today']
 }
 
