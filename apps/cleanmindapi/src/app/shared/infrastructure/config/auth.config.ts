@@ -16,7 +16,7 @@ export default registerAs('auth', () => ({
 
   mail: {
     apiKey: process.env.BREVO_API_KEY!,
-    apiUrl: process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3',
+    apiUrl: process.env.BREVO_API_URL || 'https://api.brevo.com/v3',
     timeoutMs: Number(process.env.BREVO_TIMEOUT_MS ?? 10_000),
     from: process.env.MAIL_FROM!,
     fromName: process.env.MAIL_FROM_NAME ?? process.env.APP_NAME ?? 'CleanMind',
