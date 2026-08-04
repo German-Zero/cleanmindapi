@@ -1,13 +1,13 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { UserSettingsRepository } from "../../../settings/domain/repositories/user-settings.repository";
-import { NOTIFICATION_SENDERS } from "../common/notification.constants";
-import { NotificationSenderPort } from "../ports/outbound/notification-sender.port";
-import { Notification } from "../../domain/entities/notification.entity";
-import { NotificationChannel } from "../../domain/enums/notification-channel.enum";
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { UserSettingsRepository } from '../../../settings/domain/repositories/user-settings.repository';
+import { NOTIFICATION_SENDERS } from '../common/notification.constants';
+import { NotificationSenderPort } from '../ports/outbound/notification-sender.port';
+import { Notification } from '../../domain/entities/notification.entity';
+import { NotificationChannel } from '../../domain/enums/notification-channel.enum';
 
 @Injectable()
 export class NotificationDispatcherService {
-  private readonly logger = new Logger(NotificationDispatcherService.name)
+  private readonly logger = new Logger(NotificationDispatcherService.name);
 
   constructor(
     private readonly settingsRepository: UserSettingsRepository,
@@ -16,32 +16,39 @@ export class NotificationDispatcherService {
     private readonly senders: NotificationSenderPort[],
   ) {}
 
-  async send(userId: string, notification: Notification): Promise<void> {
+  async send(userId: string, notification: Notification): Promise<boolean> {
     const settings = await this.settingsRepository.findByUserId(userId);
 
-    if (!settings) return
+    if (!settings) return false;
 
     const enabledChannels: NotificationChannel[] = [];
 
-    if (settings.emailNotifications) enabledChannels.push(NotificationChannel.EMAIL)
+    if (settings.emailNotifications)
+      enabledChannels.push(NotificationChannel.EMAIL);
 
-    if (settings.whatsappNotifications) enabledChannels.push(NotificationChannel.WHATSAPP)
+    if (settings.whatsappNotifications)
+      enabledChannels.push(NotificationChannel.WHATSAPP);
 
-    if (settings.discordNotifications) enabledChannels.push(NotificationChannel.DISCORD)
+    if (settings.discordNotifications)
+      enabledChannels.push(NotificationChannel.DISCORD);
 
-    await Promise.all(this.senders.filter(sender =>
-      enabledChannels.includes(sender.channel))
-      .map(async sender => {
-        try {
-          await sender.send(userId, notification)
-        } catch (error) {
-          this.logger.error(`failed sending notification through ${sender.channel}`,
-            error instanceof Error
-              ? error.stack
-              : undefined
-          )
-        }
-      })
-    )
+    const results = await Promise.all(
+      this.senders
+        .filter((sender) => enabledChannels.includes(sender.channel))
+        .map(async (sender) => {
+          try {
+            await sender.send(userId, notification);
+            return true;
+          } catch (error) {
+            this.logger.error(
+              `failed sending notification through ${sender.channel}`,
+              error instanceof Error ? error.stack : undefined,
+            );
+            return false;
+          }
+        }),
+    );
+
+    return results.some(Boolean);
   }
 }

@@ -24,31 +24,31 @@ enum AuthProvider {
 }
 
 model User {
-  id                  String               @id
-  name                String
-  email               String               @unique
-  passwordHash        String?
-  avatarUrl           String?
-  role                UserRole             @default(USER)
-  provider            AuthProvider         @default(LOCAL)
-  emailVerified       Boolean              @default(false)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  lastLoginAt         DateTime?
+  id                    String                @id
+  name                  String
+  email                 String                @unique
+  passwordHash          String?
+  avatarUrl             String?
+  role                  UserRole              @default(USER)
+  provider              AuthProvider          @default(LOCAL)
+  emailVerified         Boolean               @default(false)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  lastLoginAt           DateTime?
   onboardingCompletedAt DateTime?
-  refreshTokens       RefreshToken[]
-  verificationTokens  VerificationToken[]
-  passwordResetTokens PasswordResetToken[]
-  tasks               Task[]
-  userSettings        UserSettings?
-  discordConnection   DiscordConnection?
-  discordOAuthStates  DiscordOAuthState[]
-  mfaAuthenticator    MfaAuthenticator?
-  mfaChallenges       MfaChallenge[]
-  pomodoroSettings    PomodoroSettings?
-  pomodoroSessions    PomodoroSession[]
-  whiteboard          Whiteboard?
-  termsAcceptances    UserTermsAcceptance[]
+  refreshTokens         RefreshToken[]
+  verificationTokens    VerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+  tasks                 Task[]
+  userSettings          UserSettings?
+  discordConnection     DiscordConnection?
+  discordOAuthStates    DiscordOAuthState[]
+  mfaAuthenticator      MfaAuthenticator?
+  mfaChallenges         MfaChallenge[]
+  pomodoroSettings      PomodoroSettings?
+  pomodoroSessions      PomodoroSession[]
+  whiteboard            Whiteboard?
+  termsAcceptances      UserTermsAcceptance[]
 
   @@map("users")
 }
@@ -210,8 +210,9 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pomodoroSessions PomodoroSession[]
+  user                   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pomodoroSessions       PomodoroSession[]
+  notificationDeliveries TaskNotificationDelivery[]
 
   @@index([userId])
 }
@@ -296,6 +297,25 @@ enum TaskQuadrant {
   PLAN
   DELEGATE
   DELETE
+}
+
+enum TaskNotificationKind {
+  REMINDER
+  OVERDUE
+}
+
+model TaskNotificationDelivery {
+  id      String               @id @default(uuid())
+  taskId  String
+  kind    TaskNotificationKind
+  dueDate DateTime
+  sentAt  DateTime             @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, kind, dueDate])
+  @@index([sentAt])
+  @@map("task_notification_deliveries")
 }
 
 model UserSettings {
