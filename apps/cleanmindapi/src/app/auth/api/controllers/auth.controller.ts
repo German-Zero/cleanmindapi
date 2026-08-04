@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { RegisterRequest } from "../requests/register.request";
 import { RegisterUserCommand } from "../../application/commands/register-user.command";
 import { Public } from "../../../shared/security/decorators/public.decorator";
@@ -98,7 +98,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -124,7 +124,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -216,7 +216,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -229,24 +229,30 @@ export class AuthController {
     @CurrentRefreshToken() refreshToken: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponse> {
-    const response =
-      await this.refreshToken.execute(
+    try {
+      const response = await this.refreshToken.execute(
         new RefreshTokenCommand(refreshToken),
       );
 
-    this.cookieService.setAccessToken(
-      res,
-      response.accessToken,
-      response.expiresIn,
-    );
+      this.cookieService.setAccessToken(
+        res,
+        response.accessToken,
+        response.expiresIn,
+      );
 
-    this.cookieService.setRefreshToken(
-      res,
-      response.refreshToken,
-      response.expiresIn,
-    );
+      this.cookieService.setRefreshToken(
+        res,
+        response.refreshToken,
+        response.refreshExpiresIn,
+      );
 
-    return response;
+      return response;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.cookieService.clearTokens(res);
+      }
+      throw error;
+    }
   }
 
   @Post('logout')
@@ -412,7 +418,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     const destination = response.user.requiresTermsAcceptance

@@ -14,6 +14,7 @@ export class AuthResponseMapper {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresIn: tokens.accessTokenExpiresIn,
+      refreshExpiresIn: tokens.refreshTokenExpiresIn,
 
       user: {
         id: user.id,
