@@ -3,11 +3,11 @@ import { TermsService } from './terms.service';
 
 describe('TermsService', () => {
   const current = {
-    id: 'terms-id',
-    version: 'beta-1',
+    id: 'terms-beta-2',
+    version: 'beta-2',
     title: 'Beta',
     documentUrl: '/beta',
-    effectiveAt: new Date('2026-07-29T00:00:00.000Z'),
+    effectiveAt: new Date('2026-08-04T00:00:00.000Z'),
   };
 
   it('requires and then records acceptance of the current version', async () => {
@@ -23,10 +23,10 @@ describe('TermsService', () => {
 
     await expect(service.requiresAcceptance('user-id')).resolves.toBe(true);
     await expect(service.acceptCurrent('user-id')).resolves.toMatchObject({
-      version: 'beta-1',
+      version: 'beta-2',
       accepted: true,
     });
     await expect(service.requiresAcceptance('user-id')).resolves.toBe(false);
-    expect(repository.accept).toHaveBeenCalledWith('user-id', 'terms-id');
+    expect(repository.accept).toHaveBeenCalledWith('user-id', 'terms-beta-2');
   });
 });
