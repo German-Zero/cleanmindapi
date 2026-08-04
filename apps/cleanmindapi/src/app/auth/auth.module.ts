@@ -22,6 +22,7 @@ import { ChangePasswordUseCase } from "./application/use-cases/change-password.u
 import { SetPasswordUseCase } from "./application/use-cases/set-password.usecase";
 import { ResendVerificationEmailUseCase } from "./application/use-cases/resend-verification-email.usecase";
 import { DeleteAccountUseCase } from "./application/use-cases/delete-account.usecase";
+import { CompleteOnboardingUseCase } from './application/use-cases/complete-onboarding.usecase';
 
 import { PrismaUserRepository } from "../users/infrastructure/repositories/prisma-user.repository";
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
@@ -99,6 +100,8 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
     GoogleStrategy,
 
     // Use-Cases
+
+    CompleteOnboardingUseCase,
 
     DeleteAccountUseCase,
     {

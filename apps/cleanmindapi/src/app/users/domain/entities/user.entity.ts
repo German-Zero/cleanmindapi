@@ -16,7 +16,7 @@ export class User {
     public createdAt: Date,
     public updatedAt: Date,
     public lastLoginAt: Date | null,
-    public termsAcceptedAt: Date | null = null,
+    public onboardingCompletedAt: Date | null = null,
   ) {}
 
   private touch(): void {
@@ -27,7 +27,6 @@ export class User {
     name: string;
     email: Email;
     passwordHash: string;
-    termsAcceptedAt?: Date | null;
   }): User {
     const now = new Date();
 
@@ -43,7 +42,7 @@ export class User {
       now,
       now,
       null,
-      params.termsAcceptedAt ?? null,
+      null,
     )
   }
 
@@ -72,6 +71,13 @@ export class User {
 
   updateLastLogin(): void {
     this.lastLoginAt = new Date();
+  }
+
+  completeOnboarding(): void {
+    if (this.onboardingCompletedAt) return;
+
+    this.onboardingCompletedAt = new Date();
+    this.touch();
   }
 
   rename(name: string): void {

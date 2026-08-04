@@ -18,6 +18,8 @@ export class AuthMapper {
         role: response.user.role,
         avatarUrl: response.user.avatarUrl,
         emailVerified: response.user.emailVerified,
+        requiresTermsAcceptance: response.user.requiresTermsAcceptance,
+        needsOnboarding: response.user.needsOnboarding,
       },
     };
   }

@@ -46,6 +46,8 @@ import { ConfigService } from '@nestjs/config';
 import { ResendVerificationEmailPort } from "../../application/ports/inbound/resend-verification-email.port";
 import { ResendVerificationEmailCommand } from "../../application/commands/resend-verification-email.command";
 import { DeleteAccountUseCase } from "../../application/use-cases/delete-account.usecase";
+import { CompleteOnboardingUseCase } from '../../application/use-cases/complete-onboarding.usecase';
+import { TermsOptional } from '../../../shared/security/decorators/terms-optional.decorator';
 
 
 @Controller('auth')
@@ -67,6 +69,7 @@ export class AuthController {
     private readonly mfaService: MfaService,
     private readonly config: ConfigService,
     private readonly deleteAccountUseCase: DeleteAccountUseCase,
+    private readonly completeOnboardingUseCase: CompleteOnboardingUseCase,
   ) {}
 
   @Post('register')
@@ -261,6 +264,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @TermsOptional()
   @Header('Cache-Control', 'no-store')
   async me(@CurrentUser() user: JwtPayload): Promise<CurrentUserResponse> {
     const currentUser = await this.getCurrentUser.execute(user.sub);
@@ -269,6 +273,7 @@ export class AuthController {
 
   @Delete('account')
   @UseGuards(JwtAuthGuard)
+  @TermsOptional()
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(
     @CurrentUser() user: JwtPayload,
@@ -276,6 +281,13 @@ export class AuthController {
   ): Promise<void> {
     await this.deleteAccountUseCase.execute(user.sub);
     this.cookieService.clearTokens(res);
+  }
+
+  @Patch('onboarding/complete')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async completeOnboarding(@CurrentUser() user: JwtPayload): Promise<void> {
+    await this.completeOnboardingUseCase.execute(user.sub);
   }
 
   @Post('verify-email')
@@ -403,10 +415,14 @@ export class AuthController {
       604800,
     );
 
+    const destination = response.user.requiresTermsAcceptance
+      ? '/terms'
+      : '/dashboard/calendar';
+
     res.redirect(
       HttpStatus.FOUND,
       new URL(
-        '/dashboard/calendar',
+        destination,
         this.config.getOrThrow<string>('auth.frontend.url'),
       ).toString(),
     );

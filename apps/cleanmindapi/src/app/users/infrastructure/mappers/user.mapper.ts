@@ -20,7 +20,7 @@ export class UserMapper {
       user.createdAt,
       user.updatedAt,
       user.lastLoginAt,
-      user.termsAcceptedAt,
+      user.onboardingCompletedAt,
     )
   }
 
@@ -35,7 +35,7 @@ export class UserMapper {
       emailVerified: user.emailVerified,
       avatarUrl: user.avatarUrl,
       lastLoginAt: user.lastLoginAt,
-      termsAcceptedAt: user.termsAcceptedAt,
+      onboardingCompletedAt: user.onboardingCompletedAt,
     }
   }
 }

@@ -7,6 +7,7 @@ export class AuthResponseMapper {
   static toResponse(
     user: User,
     tokens: GeneratedTokens,
+    requiresTermsAcceptance = false,
   ): AuthResponse {
     return {
       mfaRequired: false,
@@ -21,6 +22,8 @@ export class AuthResponseMapper {
         role: user.role,
         avatarUrl: user.avatarUrl,
         emailVerified: user.emailVerified,
+        requiresTermsAcceptance,
+        needsOnboarding: user.onboardingCompletedAt === null,
       },
     };
   }

@@ -9,6 +9,7 @@ import { RefreshTokenRepository } from '../../domain/repositories/refresh-token.
 import { JwtPort } from '../ports/outbound/jwt.port';
 import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
 import { AuthenticationMethod } from '../common/authentication-context';
+import { TermsService } from '../../../legal/application/terms.service';
 
 @Injectable()
 export class SessionIssuerService {
@@ -17,6 +18,7 @@ export class SessionIssuerService {
     private readonly tokenHasher: TokenHasherPort,
     private readonly refreshTokens: RefreshTokenRepository,
     private readonly users: UserRepository,
+    private readonly terms: TermsService,
   ) {}
 
   async issue(
@@ -37,9 +39,11 @@ export class SessionIssuerService {
       }),
     );
 
+    const requiresTermsAcceptance = await this.terms.requiresAcceptance(user.id);
+
     user.updateLastLogin();
     await this.users.update(user);
 
-    return AuthResponseMapper.toResponse(user, tokens);
+    return AuthResponseMapper.toResponse(user, tokens, requiresTermsAcceptance);
   }
 }

@@ -11,6 +11,7 @@ export class CurrentUserMapper {
       role: user.role,
       avatarUrl: user.avatarUrl,
       hasPassword: Boolean(user.passwordHash),
+      needsOnboarding: user.onboardingCompletedAt === null,
     }
   }
 }

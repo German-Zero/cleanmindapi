@@ -16,10 +16,15 @@ kill_timeout = "10s"
   APP_NAME = "CleanMind"
   BREVO_API_URL = "https://api.brevo.com/v3"
   BREVO_TIMEOUT_MS = "10000"
-  MAIL_FROM = "germannaz_@hotmail.com"
+  MAIL_FROM = "cleanmind.support@gmail.com"
   MAIL_FROM_NAME = "CleanMind"
   SUPPORT_EMAIL = "germannaz_@hotmail.com"
   MFA_ISSUER = "CleanMind"
+  FRONTEND_URL = "https://cleanmind.vercel.app"
+  CORS_ORIGINS = "https://cleanmind.vercel.app"
+  GOOGLE_CALLBACK_URL = "https://cleanmind.vercel.app/api/auth/google/callback"
+  DISCORD_REDIRECT_URI = "https://cleanmind.vercel.app/api/notifications/discord/callback"
+  DISCORD_OAUTH_SUCCESS_URL = "https://cleanmind.vercel.app/settings"
 
 [http_service]
   internal_port = 8080

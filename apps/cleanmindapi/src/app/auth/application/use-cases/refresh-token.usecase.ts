@@ -9,6 +9,7 @@ import { RefreshTokenPort } from "../ports/inbound/refresh-token.port";
 import { RefreshTokenValidationService } from "../../domain/services/refresh-token-validation.service";
 import { RefreshTokenCommand } from "../commands/refresh-token.command";
 import { AuthProvider } from '../../../users/domain/enums/auth-provider.enum';
+import { TermsService } from '../../../legal/application/terms.service';
 
 @Injectable()
 export class RefreshTokenUseCase implements RefreshTokenPort {
@@ -17,7 +18,8 @@ export class RefreshTokenUseCase implements RefreshTokenPort {
     private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly refreshTokenHasher: TokenHasherPort,
-    private readonly refreshTokenValidationService: RefreshTokenValidationService
+    private readonly refreshTokenValidationService: RefreshTokenValidationService,
+    private readonly terms: TermsService,
   ) {}
 
   async execute(
@@ -80,6 +82,7 @@ export class RefreshTokenUseCase implements RefreshTokenPort {
     return AuthResponseMapper.toResponse(
       user,
       generatedTokens,
+      await this.terms.requiresAcceptance(user.id),
     )
   }
 }

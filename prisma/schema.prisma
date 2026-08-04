@@ -35,7 +35,7 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   lastLoginAt         DateTime?
-  termsAcceptedAt     DateTime?
+  onboardingCompletedAt DateTime?
   refreshTokens       RefreshToken[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
@@ -48,8 +48,36 @@ model User {
   pomodoroSettings    PomodoroSettings?
   pomodoroSessions    PomodoroSession[]
   whiteboard          Whiteboard?
+  termsAcceptances    UserTermsAcceptance[]
 
   @@map("users")
+}
+
+model TermsVersion {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  title       String
+  documentUrl String
+  effectiveAt DateTime
+  createdAt   DateTime @default(now())
+
+  acceptances UserTermsAcceptance[]
+
+  @@index([effectiveAt])
+  @@map("terms_versions")
+}
+
+model UserTermsAcceptance {
+  userId         String
+  termsVersionId String
+  acceptedAt     DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termsVersion TermsVersion @relation(fields: [termsVersionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, termsVersionId])
+  @@index([termsVersionId])
+  @@map("user_terms_acceptances")
 }
 
 model MfaAuthenticator {
