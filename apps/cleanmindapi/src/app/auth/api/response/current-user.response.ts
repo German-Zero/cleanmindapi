@@ -8,4 +8,5 @@ export class CurrentUserResponse {
   role!: UserRole;
   avatarUrl!: string | null;
   hasPassword!: boolean;
+  needsOnboarding!: boolean;
 }
