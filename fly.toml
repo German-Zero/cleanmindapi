@@ -13,6 +13,7 @@ kill_timeout = "10s"
 [env]
   NODE_ENV = "production"
   PORT = "8080"
+  BETA_MAX_USERS = "20"
   APP_NAME = "CleanMind"
   BREVO_API_URL = "https://api.brevo.com/v3"
   BREVO_TIMEOUT_MS = "10000"
