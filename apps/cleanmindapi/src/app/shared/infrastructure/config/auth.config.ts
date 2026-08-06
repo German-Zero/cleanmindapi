@@ -1,5 +1,12 @@
 import { registerAs } from '@nestjs/config';
 
+function getBetaCapacity(): number {
+  const requestedCapacity = Number(process.env.BETA_MAX_USERS ?? 20);
+  return Number.isInteger(requestedCapacity)
+    ? Math.min(Math.max(requestedCapacity, 1), 20)
+    : 20;
+}
+
 export default registerAs('auth', () => ({
   accessSecret: process.env.JWT_ACCESS_SECRET!,
   refreshSecret: process.env.JWT_REFRESH_SECRET!,
@@ -7,6 +14,14 @@ export default registerAs('auth', () => ({
   refreshTokenExpiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES ?? '7d',
 
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 12),
+
+  beta: {
+    maxUsers: getBetaCapacity(),
+    allowedEmails: (process.env.BETA_ALLOWED_EMAILS ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  },
 
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID!,

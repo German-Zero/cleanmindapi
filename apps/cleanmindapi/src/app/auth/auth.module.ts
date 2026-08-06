@@ -69,6 +69,7 @@ import { MfaService } from './application/services/mfa.service';
 import { SessionIssuerService } from './application/services/session-issuer.service';
 import { TotpService } from './infrastructure/services/totp.service';
 import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret-encryption.service';
+import { ClosedBetaRegistrationService } from './application/services/closed-beta-registration.service';
 
 
 @Module({
@@ -98,6 +99,7 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
 
     GoogleAuthGuard,
     GoogleStrategy,
+    ClosedBetaRegistrationService,
 
     // Use-Cases
 

@@ -48,6 +48,11 @@ import { ResendVerificationEmailCommand } from "../../application/commands/resen
 import { DeleteAccountUseCase } from "../../application/use-cases/delete-account.usecase";
 import { CompleteOnboardingUseCase } from '../../application/use-cases/complete-onboarding.usecase';
 import { TermsOptional } from '../../../shared/security/decorators/terms-optional.decorator';
+import {
+  BetaRegistrationException,
+  ClosedBetaRegistrationService,
+} from '../../application/services/closed-beta-registration.service';
+import { RegistrationStatusResponse } from '../response/registration-status.response';
 
 
 @Controller('auth')
@@ -70,7 +75,15 @@ export class AuthController {
     private readonly config: ConfigService,
     private readonly deleteAccountUseCase: DeleteAccountUseCase,
     private readonly completeOnboardingUseCase: CompleteOnboardingUseCase,
+    private readonly betaRegistration: ClosedBetaRegistrationService,
   ) {}
+
+  @Get('registration-status')
+  @Public()
+  @Header('Cache-Control', 'no-store')
+  registrationStatus(): Promise<RegistrationStatusResponse> {
+    return this.betaRegistration.getStatus();
+  }
 
   @Post('register')
   @Public()
@@ -388,14 +401,28 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
 
-    const response =
-      await this.loginGoogleUseCase.execute(
+    let response: LoginResponse;
+
+    try {
+      response = await this.loginGoogleUseCase.execute(
         new LoginGoogleCommand(
           user.email,
           user.name,
           user.avatarUrl,
         ),
       );
+    } catch (error) {
+      if (!(error instanceof BetaRegistrationException)) throw error;
+
+      this.cookieService.clearTokens(res);
+      const loginUrl = new URL(
+        '/login',
+        this.config.getOrThrow<string>('auth.frontend.url'),
+      );
+      loginUrl.searchParams.set('googleRegistrationError', error.reason);
+      res.redirect(HttpStatus.FOUND, loginUrl.toString());
+      return;
+    }
 
     if ('challengeToken' in response) {
       this.cookieService.clearTokens(res);
