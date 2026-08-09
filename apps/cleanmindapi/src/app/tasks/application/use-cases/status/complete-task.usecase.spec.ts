@@ -1,5 +1,6 @@
 import { NotificationFactory } from '../../../../notifications/application/factories/notification.factory';
 import { NotificationDispatcherService } from '../../../../notifications/application/services/notification-dispatcher.service';
+import { RewardsService } from '../../../../rewards/application/services/rewards.service';
 import { User } from '../../../../users/domain/entities/user.entity';
 import { UserRepository } from '../../../../users/domain/repositories/user.repository';
 import { Email } from '../../../../users/domain/value-objects/email.vo';
@@ -51,23 +52,34 @@ describe('CompleteTaskUseCase', () => {
     const dispatcher = {
       send: jest.fn().mockResolvedValue(undefined),
     } as unknown as NotificationDispatcherService;
+    const rewards = {
+      awardTaskCompletion: jest.fn().mockResolvedValue({
+        pointsAwarded: status === TaskStatus.COMPLETED ? 0 : 5,
+        balance: 15,
+        earnedThisMonth: 15,
+        monthlyLimit: 100,
+        remainingThisMonth: 85,
+      }),
+    } as unknown as RewardsService;
 
     return {
       dispatcher,
+      rewards,
       useCase: new CompleteTaskUseCase(
         persistence,
         owner,
         users,
         new NotificationFactory(),
         dispatcher,
+        rewards,
       ),
     };
   };
 
   it('envía la notificación habilitada al completar una tarea', async () => {
-    const { dispatcher, useCase } = setup(TaskStatus.IN_PROGRESS);
+    const { dispatcher, rewards, useCase } = setup(TaskStatus.IN_PROGRESS);
 
-    await useCase.execute(new TaskActionCommand(taskId, userId));
+    const result = await useCase.execute(new TaskActionCommand(taskId, userId));
 
     expect(dispatcher.send).toHaveBeenCalledTimes(1);
     expect(dispatcher.send).toHaveBeenCalledWith(
@@ -76,13 +88,20 @@ describe('CompleteTaskUseCase', () => {
         type: 'TASK_COMPLETED',
       }),
     );
+    expect(rewards.awardTaskCompletion).toHaveBeenCalledWith(userId, taskId);
+    expect(result).toEqual(
+      expect.objectContaining({
+        reward: expect.objectContaining({ pointsAwarded: 5 }),
+      }),
+    );
   });
 
   it('no duplica la notificación de una tarea ya completada', async () => {
-    const { dispatcher, useCase } = setup(TaskStatus.COMPLETED);
+    const { dispatcher, rewards, useCase } = setup(TaskStatus.COMPLETED);
 
     await useCase.execute(new TaskActionCommand(taskId, userId));
 
     expect(dispatcher.send).not.toHaveBeenCalled();
+    expect(rewards.awardTaskCompletion).toHaveBeenCalledWith(userId, taskId);
   });
 });
