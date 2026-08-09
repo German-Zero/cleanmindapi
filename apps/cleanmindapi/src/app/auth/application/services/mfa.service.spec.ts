@@ -73,6 +73,7 @@ describe('MfaService', () => {
         accessToken: 'access',
         refreshToken: 'refresh',
         expiresIn: 900,
+        refreshExpiresIn: 604800,
         user: {},
       }),
       ...overrides.sessions,

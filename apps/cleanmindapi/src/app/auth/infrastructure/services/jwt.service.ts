@@ -99,15 +99,26 @@ async generateTokens(
   }
 
   async verifyRefreshToken(token: string): Promise<JwtPayload> {
-    const payload = await this.jwtService.verifyAsync<JwtPayload>(token,
-      {
-        secret: this.configService.get<string>('auth.refreshSecret'),
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
+        token,
+        {
+          secret: this.configService.get<string>('auth.refreshSecret'),
+        },
+      )
+
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException(
+          'Tu sesión no es válida. Inicia sesión nuevamente.',
+        )
       }
-    )
 
-    if (payload.type !== 'refresh') throw new UnauthorizedException('Tu sesión no es válida. Inicia sesión nuevamente.')
-
-    return payload
+      return payload
+    } catch {
+      throw new UnauthorizedException(
+        'Tu sesión no es válida. Inicia sesión nuevamente.',
+      )
+    }
   }
 
 }

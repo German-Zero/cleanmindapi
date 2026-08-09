@@ -10,6 +10,7 @@ export class AuthMapper {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       expiresIn: response.expiresIn,
+      refreshExpiresIn: response.refreshExpiresIn,
 
       user: {
         id: response.user.id,
@@ -18,6 +19,8 @@ export class AuthMapper {
         role: response.user.role,
         avatarUrl: response.user.avatarUrl,
         emailVerified: response.user.emailVerified,
+        requiresTermsAcceptance: response.user.requiresTermsAcceptance,
+        needsOnboarding: response.user.needsOnboarding,
       },
     };
   }

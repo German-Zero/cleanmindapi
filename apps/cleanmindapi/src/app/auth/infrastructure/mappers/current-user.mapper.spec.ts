@@ -28,6 +28,7 @@ describe('CurrentUserMapper', () => {
       role: UserRole.USER,
       avatarUrl: 'https://example.com/avatar.png',
       hasPassword: true,
+      needsOnboarding: true,
     });
 
     user.passwordHash = null;
@@ -37,5 +38,9 @@ describe('CurrentUserMapper', () => {
       avatarUrl: null,
       hasPassword: false,
     });
+
+    user.completeOnboarding();
+
+    expect(CurrentUserMapper.toResponse(user).needsOnboarding).toBe(false);
   });
 });

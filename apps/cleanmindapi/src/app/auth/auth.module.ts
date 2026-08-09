@@ -22,6 +22,7 @@ import { ChangePasswordUseCase } from "./application/use-cases/change-password.u
 import { SetPasswordUseCase } from "./application/use-cases/set-password.usecase";
 import { ResendVerificationEmailUseCase } from "./application/use-cases/resend-verification-email.usecase";
 import { DeleteAccountUseCase } from "./application/use-cases/delete-account.usecase";
+import { CompleteOnboardingUseCase } from './application/use-cases/complete-onboarding.usecase';
 
 import { PrismaUserRepository } from "../users/infrastructure/repositories/prisma-user.repository";
 import { PrismaRefreshTokenRepository } from "./infrastructure/prisma/repositories/prisma-refresh-token.repository";
@@ -68,6 +69,7 @@ import { MfaService } from './application/services/mfa.service';
 import { SessionIssuerService } from './application/services/session-issuer.service';
 import { TotpService } from './infrastructure/services/totp.service';
 import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret-encryption.service';
+import { ClosedBetaRegistrationService } from './application/services/closed-beta-registration.service';
 
 
 @Module({
@@ -97,8 +99,11 @@ import { MfaSecretEncryptionService } from './infrastructure/services/mfa-secret
 
     GoogleAuthGuard,
     GoogleStrategy,
+    ClosedBetaRegistrationService,
 
     // Use-Cases
+
+    CompleteOnboardingUseCase,
 
     DeleteAccountUseCase,
     {

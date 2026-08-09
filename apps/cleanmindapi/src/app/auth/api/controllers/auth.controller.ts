@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { RegisterRequest } from "../requests/register.request";
 import { RegisterUserCommand } from "../../application/commands/register-user.command";
 import { Public } from "../../../shared/security/decorators/public.decorator";
@@ -46,6 +46,13 @@ import { ConfigService } from '@nestjs/config';
 import { ResendVerificationEmailPort } from "../../application/ports/inbound/resend-verification-email.port";
 import { ResendVerificationEmailCommand } from "../../application/commands/resend-verification-email.command";
 import { DeleteAccountUseCase } from "../../application/use-cases/delete-account.usecase";
+import { CompleteOnboardingUseCase } from '../../application/use-cases/complete-onboarding.usecase';
+import { TermsOptional } from '../../../shared/security/decorators/terms-optional.decorator';
+import {
+  BetaRegistrationException,
+  ClosedBetaRegistrationService,
+} from '../../application/services/closed-beta-registration.service';
+import { RegistrationStatusResponse } from '../response/registration-status.response';
 
 
 @Controller('auth')
@@ -67,7 +74,16 @@ export class AuthController {
     private readonly mfaService: MfaService,
     private readonly config: ConfigService,
     private readonly deleteAccountUseCase: DeleteAccountUseCase,
+    private readonly completeOnboardingUseCase: CompleteOnboardingUseCase,
+    private readonly betaRegistration: ClosedBetaRegistrationService,
   ) {}
+
+  @Get('registration-status')
+  @Public()
+  @Header('Cache-Control', 'no-store')
+  registrationStatus(): Promise<RegistrationStatusResponse> {
+    return this.betaRegistration.getStatus();
+  }
 
   @Post('register')
   @Public()
@@ -95,7 +111,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -121,7 +137,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -213,7 +229,7 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
 
     return response;
@@ -226,24 +242,30 @@ export class AuthController {
     @CurrentRefreshToken() refreshToken: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponse> {
-    const response =
-      await this.refreshToken.execute(
+    try {
+      const response = await this.refreshToken.execute(
         new RefreshTokenCommand(refreshToken),
       );
 
-    this.cookieService.setAccessToken(
-      res,
-      response.accessToken,
-      response.expiresIn,
-    );
+      this.cookieService.setAccessToken(
+        res,
+        response.accessToken,
+        response.expiresIn,
+      );
 
-    this.cookieService.setRefreshToken(
-      res,
-      response.refreshToken,
-      response.expiresIn,
-    );
+      this.cookieService.setRefreshToken(
+        res,
+        response.refreshToken,
+        response.refreshExpiresIn,
+      );
 
-    return response;
+      return response;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.cookieService.clearTokens(res);
+      }
+      throw error;
+    }
   }
 
   @Post('logout')
@@ -261,6 +283,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @TermsOptional()
   @Header('Cache-Control', 'no-store')
   async me(@CurrentUser() user: JwtPayload): Promise<CurrentUserResponse> {
     const currentUser = await this.getCurrentUser.execute(user.sub);
@@ -269,6 +292,7 @@ export class AuthController {
 
   @Delete('account')
   @UseGuards(JwtAuthGuard)
+  @TermsOptional()
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(
     @CurrentUser() user: JwtPayload,
@@ -276,6 +300,13 @@ export class AuthController {
   ): Promise<void> {
     await this.deleteAccountUseCase.execute(user.sub);
     this.cookieService.clearTokens(res);
+  }
+
+  @Patch('onboarding/complete')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async completeOnboarding(@CurrentUser() user: JwtPayload): Promise<void> {
+    await this.completeOnboardingUseCase.execute(user.sub);
   }
 
   @Post('verify-email')
@@ -370,14 +401,28 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
 
-    const response =
-      await this.loginGoogleUseCase.execute(
+    let response: LoginResponse;
+
+    try {
+      response = await this.loginGoogleUseCase.execute(
         new LoginGoogleCommand(
           user.email,
           user.name,
           user.avatarUrl,
         ),
       );
+    } catch (error) {
+      if (!(error instanceof BetaRegistrationException)) throw error;
+
+      this.cookieService.clearTokens(res);
+      const loginUrl = new URL(
+        '/login',
+        this.config.getOrThrow<string>('auth.frontend.url'),
+      );
+      loginUrl.searchParams.set('googleRegistrationError', error.reason);
+      res.redirect(HttpStatus.FOUND, loginUrl.toString());
+      return;
+    }
 
     if ('challengeToken' in response) {
       this.cookieService.clearTokens(res);
@@ -400,13 +445,17 @@ export class AuthController {
     this.cookieService.setRefreshToken(
       res,
       response.refreshToken,
-      604800,
+      response.refreshExpiresIn,
     );
+
+    const destination = response.user.requiresTermsAcceptance
+      ? '/terms'
+      : '/dashboard/calendar';
 
     res.redirect(
       HttpStatus.FOUND,
       new URL(
-        '/dashboard/calendar',
+        destination,
         this.config.getOrThrow<string>('auth.frontend.url'),
       ).toString(),
     );

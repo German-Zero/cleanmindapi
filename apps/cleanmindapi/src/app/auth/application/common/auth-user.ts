@@ -7,4 +7,6 @@ export interface AuthUser {
   role: UserRole;
   avatarUrl: string | null;
   emailVerified: boolean;
+  requiresTermsAcceptance: boolean;
+  needsOnboarding: boolean;
 }

@@ -7,12 +7,14 @@ export class AuthResponseMapper {
   static toResponse(
     user: User,
     tokens: GeneratedTokens,
+    requiresTermsAcceptance = false,
   ): AuthResponse {
     return {
       mfaRequired: false,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresIn: tokens.accessTokenExpiresIn,
+      refreshExpiresIn: tokens.refreshTokenExpiresIn,
 
       user: {
         id: user.id,
@@ -21,6 +23,8 @@ export class AuthResponseMapper {
         role: user.role,
         avatarUrl: user.avatarUrl,
         emailVerified: user.emailVerified,
+        requiresTermsAcceptance,
+        needsOnboarding: user.onboardingCompletedAt === null,
       },
     };
   }

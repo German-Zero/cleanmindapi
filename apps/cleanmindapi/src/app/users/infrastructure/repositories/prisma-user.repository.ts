@@ -4,6 +4,10 @@ import { User } from "../../domain/entities/user.entity";
 import { Email } from "../../domain/value-objects/email.vo";
 import { PrismaService } from "../../../shared/infrastructure/prisma/prisma.service";
 import { UserMapper } from "../mappers/user.mapper";
+import { UserCapacityReachedException } from "../../domain/exceptions/user-capacity-reached.exception";
+
+const BETA_REGISTRATION_LOCK_NAMESPACE = 20_260_806;
+const BETA_REGISTRATION_LOCK_KEY = 1;
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -11,9 +15,27 @@ export class PrismaUserRepository implements UserRepository {
     private readonly prisma: PrismaService,
   ) {}
 
-  async create(user: User): Promise<User> {
-    const created = await this.prisma.user.create({
-      data: UserMapper.toPersistence(user),
+  count(): Promise<number> {
+    return this.prisma.user.count();
+  }
+
+  async createWithinLimit(user: User, maxUsers: number): Promise<User> {
+    const created = await this.prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw<Array<{ lock: string }>>`
+        SELECT pg_advisory_xact_lock(
+          ${BETA_REGISTRATION_LOCK_NAMESPACE}::integer,
+          ${BETA_REGISTRATION_LOCK_KEY}::integer
+        )::text AS lock
+      `;
+
+      const userCount = await transaction.user.count();
+      if (userCount >= maxUsers) {
+        throw new UserCapacityReachedException(maxUsers);
+      }
+
+      return transaction.user.create({
+        data: UserMapper.toPersistence(user),
+      });
     });
 
     return UserMapper.toDomain(created);

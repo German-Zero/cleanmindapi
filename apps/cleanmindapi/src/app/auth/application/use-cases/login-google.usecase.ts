@@ -10,6 +10,7 @@ import { LoginGoogleCommand } from '../commands/login-google.command';
 import { LoginGooglePort } from '../ports/inbound/login-google.port';
 import { MfaService } from '../services/mfa.service';
 import { SessionIssuerService } from '../services/session-issuer.service';
+import { ClosedBetaRegistrationService } from '../services/closed-beta-registration.service';
 
 @Injectable()
 export class LoginGoogleUseCase implements LoginGooglePort {
@@ -18,6 +19,7 @@ export class LoginGoogleUseCase implements LoginGooglePort {
     private readonly settings: UserSettingsRepository,
     private readonly mfa: MfaService,
     private readonly sessions: SessionIssuerService,
+    private readonly betaRegistration: ClosedBetaRegistrationService,
   ) {}
 
   async execute(command: LoginGoogleCommand): Promise<LoginResponse> {
@@ -25,7 +27,7 @@ export class LoginGoogleUseCase implements LoginGooglePort {
     let user = await this.users.findByEmail(email);
 
     if (!user) {
-      user = await this.users.create(
+      user = await this.betaRegistration.create(
         User.createGoogle({
           name: command.name,
           email,

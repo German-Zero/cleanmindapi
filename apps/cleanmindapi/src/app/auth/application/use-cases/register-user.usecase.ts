@@ -20,6 +20,8 @@ import { AuthResponseMapper } from '../../api/mapper/auth-response.mapper';
 import { UserSettingsRepository } from '../../../settings/domain/repositories/user-settings.repository';
 import { UserSettings } from '../../../settings/domain/entities/user-settings.entity';
 import { EMAIL_VERIFICATION_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
+import { TermsService } from '../../../legal/application/terms.service';
+import { ClosedBetaRegistrationService } from '../services/closed-beta-registration.service';
 
 @Injectable()
 export class RegisterUserUseCase implements RegisterUserPort {
@@ -34,6 +36,8 @@ export class RegisterUserUseCase implements RegisterUserPort {
     private readonly tokenHasher: TokenHasherPort,
     private readonly verificationTokenRepository: VerificationTokenRepository,
     private readonly userSettingsRepository: UserSettingsRepository,
+    private readonly terms: TermsService,
+    private readonly betaRegistration: ClosedBetaRegistrationService,
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<AuthResponse> {
@@ -44,6 +48,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
     const email = new Email(command.email);
     const password = new Password(command.password);
 
+    this.betaRegistration.assertEmailAllowed(email);
     const exists = await this.userRepository.existsByEmail(email);
 
     if (exists) throw new EmailAlreadyExistsException();
@@ -54,14 +59,14 @@ export class RegisterUserUseCase implements RegisterUserPort {
       name: command.name,
       email,
       passwordHash,
-      termsAcceptedAt: new Date(),
     });
 
-    const createdUser = await this.userRepository.create(user);
+    const createdUser = await this.betaRegistration.create(user);
 
     const settings = UserSettings.createDefault(createdUser.id);
 
     await this.userSettingsRepository.create(settings);
+    await this.terms.acceptCurrent(createdUser.id);
 
     const tokens = await this.jwt.generateTokens(createdUser);
 
@@ -93,6 +98,6 @@ export class RegisterUserUseCase implements RegisterUserPort {
 
     await this.mail.sendVerificationEmail(createdUser.email.getValue(), code);
 
-    return AuthResponseMapper.toResponse(createdUser, tokens);
+    return AuthResponseMapper.toResponse(createdUser, tokens, false);
   }
 }

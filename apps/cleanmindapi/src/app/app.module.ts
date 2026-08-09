@@ -15,6 +15,7 @@ import config from './shared/infrastructure/config';
 import { NotificationModule } from './notifications/notification.module';
 import { PomodoroModule } from './pomodoro/pomodoro.module';
 import { WhiteboardModule } from './whiteboard/whiteboard.module';
+import { LegalModule } from './legal/legal.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { WhiteboardModule } from './whiteboard/whiteboard.module';
       cache: true,
       expandVariables: true,
     }),
+    LegalModule,
     UsersModule,
     AuthModule,
     SharedModule,
