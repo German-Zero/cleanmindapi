@@ -16,6 +16,7 @@ import { NotificationModule } from './notifications/notification.module';
 import { PomodoroModule } from './pomodoro/pomodoro.module';
 import { WhiteboardModule } from './whiteboard/whiteboard.module';
 import { LegalModule } from './legal/legal.module';
+import { RewardsModule } from './rewards/rewards.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LegalModule } from './legal/legal.module';
     AuthModule,
     SharedModule,
     SettingsModule,
+    RewardsModule,
     TaskModule,
     DashboardModule,
     NotificationModule,

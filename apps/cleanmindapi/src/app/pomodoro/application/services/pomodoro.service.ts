@@ -4,6 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { RewardsService } from '../../../rewards/application/services/rewards.service';
+import { RewardedResponse } from '../../../rewards/domain/models/reward.model';
 import { TaskRepository } from '../../../tasks/domain/repositories/task.repository';
 import {
   PomodoroBreakType,
@@ -42,6 +44,7 @@ export class PomodoroService {
   constructor(
     private readonly repository: PomodoroRepository,
     private readonly taskRepository: TaskRepository,
+    private readonly rewards: RewardsService,
   ) {}
 
   async getSettings(userId: string): Promise<PomodoroSettings> {
@@ -168,14 +171,20 @@ export class PomodoroService {
     sessionId: string,
     actualFocusSeconds: number,
     actualBreakSeconds: number,
-  ): Promise<PomodoroSession> {
-    return this.finishSession(
+  ): Promise<RewardedResponse<PomodoroSession>> {
+    const session = await this.finishSession(
       userId,
       sessionId,
       PomodoroSessionStatus.COMPLETED,
       actualFocusSeconds,
       actualBreakSeconds,
     );
+    const reward = await this.rewards.awardPomodoroCompletion(userId, session);
+
+    return {
+      ...session,
+      reward,
+    };
   }
 
   async interruptSession(
@@ -296,6 +305,17 @@ export class PomodoroService {
         endedAt: new Date(),
       },
     );
+
+    if (!session && status === PomodoroSessionStatus.COMPLETED) {
+      const completed = await this.repository.findSessionByIdAndUserId(
+        sessionId,
+        userId,
+      );
+
+      if (completed?.status === PomodoroSessionStatus.COMPLETED) {
+        return completed;
+      }
+    }
 
     if (!session) {
       throw new NotFoundException('Sesión Pomodoro activa no encontrada');

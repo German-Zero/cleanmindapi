@@ -89,9 +89,11 @@ describe('CompleteTaskUseCase', () => {
       }),
     );
     expect(rewards.awardTaskCompletion).toHaveBeenCalledWith(userId, taskId);
-    expect(result).toEqual(expect.objectContaining({
-      reward: expect.objectContaining({ pointsAwarded: 5 }),
-    }));
+    expect(result).toEqual(
+      expect.objectContaining({
+        reward: expect.objectContaining({ pointsAwarded: 5 }),
+      }),
+    );
   });
 
   it('no duplica la notificación de una tarea ya completada', async () => {

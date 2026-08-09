@@ -23,6 +23,7 @@ import {
   PomodoroState,
   PomodoroSummary,
 } from '../../domain/models/pomodoro.model';
+import { RewardedResponse } from '../../../rewards/domain/models/reward.model';
 import { FinishPomodoroSessionRequest } from '../requests/finish-pomodoro-session.request';
 import { StartPomodoroSessionRequest } from '../requests/start-pomodoro-session.request';
 import { UpdatePomodoroSettingsRequest } from '../requests/update-pomodoro-settings.request';
@@ -52,10 +53,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
   ): Promise<PomodoroState> {
-    return this.pomodoro.getState(
-      user.sub,
-      days,
-    );
+    return this.pomodoro.getState(user.sub, days);
   }
 
   @Get('sessions/active')
@@ -99,7 +97,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
     @Body() request: FinishPomodoroSessionRequest,
-  ): Promise<PomodoroSession> {
+  ): Promise<RewardedResponse<PomodoroSession>> {
     return this.pomodoro.completeSession(
       user.sub,
       id,

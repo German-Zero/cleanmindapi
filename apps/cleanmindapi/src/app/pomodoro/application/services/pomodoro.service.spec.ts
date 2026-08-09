@@ -88,10 +88,7 @@ describe('PomodoroService', () => {
       },
     });
 
-    const state = await service.getState(
-      'user-id',
-      7,
-    );
+    const state = await service.getState('user-id', 7);
 
     expect(state.settings).toBe(settings);
     expect(state.activeSession).toBe(activeSession);

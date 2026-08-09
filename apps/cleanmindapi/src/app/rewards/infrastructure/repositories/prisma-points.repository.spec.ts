@@ -12,11 +12,13 @@ describe('PrismaPointsRepository', () => {
     monthlyLimit: 100,
   };
 
-  function createRepository(options: {
-    existing?: object | null;
-    balance?: number;
-    earned?: number;
-  } = {}) {
+  function createRepository(
+    options: {
+      existing?: object | null;
+      balance?: number;
+      earned?: number;
+    } = {},
+  ) {
     const aggregates = [
       { _sum: { amount: options.balance ?? 25 } },
       { _sum: { amount: options.earned ?? 10 } },
@@ -25,9 +27,11 @@ describe('PrismaPointsRepository', () => {
       $queryRaw: jest.fn().mockResolvedValue([{ locked: null }]),
       pointTransaction: {
         findUnique: jest.fn().mockResolvedValue(options.existing ?? null),
-        aggregate: jest.fn().mockImplementation(() =>
-          Promise.resolve(aggregates.shift() ?? { _sum: { amount: 0 } }),
-        ),
+        aggregate: jest
+          .fn()
+          .mockImplementation(() =>
+            Promise.resolve(aggregates.shift() ?? { _sum: { amount: 0 } }),
+          ),
         create: jest.fn().mockResolvedValue({}),
       },
     };
@@ -141,6 +145,26 @@ describe('PrismaPointsRepository', () => {
     await expect(repository.getSummary('user-1', '2026-08')).resolves.toEqual({
       balance: 80,
       earnedThisMonth: 60,
+    });
+  });
+
+  it('usa valores seguros cuando no hay configuración ni movimientos', async () => {
+    const { repository, prisma } = createRepository();
+    const prismaMock = prisma as unknown as {
+      pointTransaction: { aggregate: jest.Mock };
+      userSettings: { findUnique: jest.Mock };
+    };
+    prismaMock.userSettings.findUnique.mockResolvedValue(null);
+    prismaMock.pointTransaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: null } })
+      .mockResolvedValueOnce({ _sum: { amount: null } });
+
+    await expect(repository.findUserTimezone('user-1')).resolves.toBe(
+      'America/Argentina/Cordoba',
+    );
+    await expect(repository.getSummary('user-1', '2026-08')).resolves.toEqual({
+      balance: 0,
+      earnedThisMonth: 0,
     });
   });
 });
