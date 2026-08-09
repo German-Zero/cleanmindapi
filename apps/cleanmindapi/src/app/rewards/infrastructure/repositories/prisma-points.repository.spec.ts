@@ -34,6 +34,10 @@ describe('PrismaPointsRepository', () => {
           ),
         create: jest.fn().mockResolvedValue({}),
       },
+      userSettings: {
+        findUnique: jest.fn().mockResolvedValue({ equippedStoreItems: [] }),
+        upsert: jest.fn().mockResolvedValue({}),
+      },
     };
     const prisma = {
       $transaction: jest.fn(
@@ -43,10 +47,12 @@ describe('PrismaPointsRepository', () => {
       userSettings: {
         findUnique: jest.fn().mockResolvedValue({
           timezone: 'America/Argentina/Cordoba',
+          equippedStoreItems: [],
         }),
       },
       pointTransaction: {
         aggregate: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([{ sourceId: 'BORDER_AURORA' }]),
       },
     } as unknown as PrismaService;
 
@@ -63,6 +69,8 @@ describe('PrismaPointsRepository', () => {
     const result = await repository.award(input);
 
     expect(transactionClient.$queryRaw).toHaveBeenCalledTimes(1);
+    const lockQuery = transactionClient.$queryRaw.mock.calls[0][0] as string[];
+    expect(lockQuery.join('')).toContain(')::text AS locked');
     expect(transactionClient.pointTransaction.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
@@ -166,5 +174,170 @@ describe('PrismaPointsRepository', () => {
       balance: 0,
       earnedThisMonth: 0,
     });
+  });
+
+  it('descuenta el costo y registra el canje como movimiento negativo', async () => {
+    const { repository, transactionClient } = createRepository({
+      balance: 60,
+      earned: 30,
+    });
+
+    const result = await repository.redeemStoreItem({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      cost: 35,
+      periodKey: '2026-08',
+    });
+
+    expect(transactionClient.pointTransaction.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        type: PointTransactionType.STORE_REDEMPTION,
+        sourceId: 'BORDER_AURORA',
+        amount: -35,
+        periodKey: '2026-08',
+      },
+    });
+    expect(result).toEqual({
+      status: 'PURCHASED',
+      balance: 25,
+      earnedThisMonth: 30,
+    });
+  });
+
+  it('no registra el canje si el saldo es insuficiente', async () => {
+    const { repository, transactionClient } = createRepository({
+      balance: 20,
+      earned: 20,
+    });
+
+    const result = await repository.redeemStoreItem({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      cost: 35,
+      periodKey: '2026-08',
+    });
+
+    expect(result.status).toBe('INSUFFICIENT_POINTS');
+    expect(result.balance).toBe(20);
+    expect(transactionClient.pointTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it('no cobra nuevamente una recompensa ya adquirida', async () => {
+    const { repository, transactionClient } = createRepository({
+      existing: { id: 'redemption-1' },
+      balance: 25,
+      earned: 30,
+    });
+
+    const result = await repository.redeemStoreItem({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      cost: 35,
+      periodKey: '2026-08',
+    });
+
+    expect(result.status).toBe('OWNED');
+    expect(result.balance).toBe(25);
+    expect(transactionClient.pointTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it('lista los identificadores de recompensas adquiridas', async () => {
+    const { repository, prisma } = createRepository();
+
+    await expect(repository.getOwnedStoreItemIds('user-1')).resolves.toEqual([
+      'BORDER_AURORA',
+    ]);
+    expect(prisma.pointTransaction.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        type: PointTransactionType.STORE_REDEMPTION,
+      },
+      select: { sourceId: true },
+    });
+  });
+
+  it('lista las recompensas equipadas desde la configuración', async () => {
+    const { repository, prisma } = createRepository();
+    const prismaMock = prisma as unknown as {
+      userSettings: { findUnique: jest.Mock };
+    };
+    prismaMock.userSettings.findUnique.mockResolvedValue({
+      equippedStoreItems: ['BORDER_AURORA'],
+    });
+
+    await expect(repository.getEquippedStoreItemIds('user-1')).resolves.toEqual(
+      ['BORDER_AURORA'],
+    );
+  });
+
+  it('equipa una recompensa adquirida y reemplaza su categoría', async () => {
+    const { repository, transactionClient } = createRepository({
+      existing: { id: 'redemption-1' },
+    });
+    transactionClient.userSettings.findUnique.mockResolvedValue({
+      equippedStoreItems: ['BORDER_SUNSET', 'EFFECT_SERENE_GLASS'],
+    });
+
+    const result = await repository.setStoreItemEquipped({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      categoryItemIds: ['BORDER_AURORA', 'BORDER_SUNSET'],
+      equipped: true,
+    });
+
+    expect(transactionClient.userSettings.upsert).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      create: {
+        userId: 'user-1',
+        equippedStoreItems: ['EFFECT_SERENE_GLASS', 'BORDER_AURORA'],
+      },
+      update: {
+        equippedStoreItems: ['EFFECT_SERENE_GLASS', 'BORDER_AURORA'],
+      },
+    });
+    expect(result).toEqual({
+      status: 'UPDATED',
+      equippedItemIds: ['EFFECT_SERENE_GLASS', 'BORDER_AURORA'],
+    });
+  });
+
+  it('no equipa una recompensa que el usuario no adquirió', async () => {
+    const { repository, transactionClient } = createRepository({
+      existing: null,
+    });
+
+    const result = await repository.setStoreItemEquipped({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      categoryItemIds: ['BORDER_AURORA', 'BORDER_SUNSET'],
+      equipped: true,
+    });
+
+    expect(result).toEqual({
+      status: 'NOT_OWNED',
+      equippedItemIds: [],
+    });
+    expect(transactionClient.userSettings.upsert).not.toHaveBeenCalled();
+  });
+
+  it('quita una recompensa sin alterar las demás categorías', async () => {
+    const { repository, transactionClient } = createRepository();
+    transactionClient.userSettings.findUnique.mockResolvedValue({
+      equippedStoreItems: ['BORDER_AURORA', 'EFFECT_SERENE_GLASS'],
+    });
+
+    await repository.setStoreItemEquipped({
+      userId: 'user-1',
+      itemId: 'BORDER_AURORA',
+      categoryItemIds: ['BORDER_AURORA', 'BORDER_SUNSET'],
+      equipped: false,
+    });
+
+    expect(transactionClient.userSettings.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: { equippedStoreItems: ['EFFECT_SERENE_GLASS'] },
+      }),
+    );
   });
 });

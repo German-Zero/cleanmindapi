@@ -1,10 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   PomodoroSession,
   PomodoroSessionStatus,
 } from '../../../pomodoro/domain/models/pomodoro.model';
 import { PointTransactionType } from '../../domain/enums/point-transaction-type.enum';
-import { RewardGrant, RewardSummary } from '../../domain/models/reward.model';
+import {
+  RewardGrant,
+  RewardSummary,
+  STORE_CATALOG,
+  StorefrontResponse,
+  StoreItem,
+  StoreItemDefinition,
+  StorePurchaseResponse,
+} from '../../domain/models/reward.model';
 import { PointsRepository } from '../../domain/repositories/points.repository';
 
 @Injectable()
@@ -65,6 +78,114 @@ export class RewardsService {
     const periodKey = await this.currentPeriodKey(userId, now);
     const totals = await this.points.getSummary(userId, periodKey);
     return this.toSummary(totals);
+  }
+
+  async getStore(
+    userId: string,
+    now = new Date(),
+  ): Promise<StorefrontResponse> {
+    const periodKey = await this.currentPeriodKey(userId, now);
+    const [totals, ownedItemIds, equippedItemIds] = await Promise.all([
+      this.points.getSummary(userId, periodKey),
+      this.points.getOwnedStoreItemIds(userId),
+      this.points.getEquippedStoreItemIds(userId),
+    ]);
+    const summary = this.toSummary(totals);
+    const owned = new Set(ownedItemIds);
+    const equipped = new Set(equippedItemIds);
+
+    return {
+      summary,
+      items: STORE_CATALOG.map((item) =>
+        this.toStoreItem(
+          item,
+          owned.has(item.id),
+          summary.balance,
+          equipped.has(item.id),
+        ),
+      ),
+    };
+  }
+
+  async purchaseStoreItem(
+    userId: string,
+    itemId: string,
+    now = new Date(),
+  ): Promise<StorePurchaseResponse> {
+    const definition = STORE_CATALOG.find((item) => item.id === itemId);
+    if (!definition) {
+      throw new NotFoundException('La recompensa seleccionada no existe.');
+    }
+
+    const periodKey = await this.currentPeriodKey(userId, now);
+    const result = await this.points.redeemStoreItem({
+      userId,
+      itemId: definition.id,
+      cost: definition.cost,
+      periodKey,
+    });
+
+    if (result.status === 'INSUFFICIENT_POINTS') {
+      throw new ConflictException(
+        `Necesitas ${definition.cost} puntos para canjear esta recompensa. Tu saldo actual es ${result.balance}.`,
+      );
+    }
+
+    const summary = this.toSummary(result);
+    const equippedItemIds = await this.points.getEquippedStoreItemIds(userId);
+    return {
+      summary,
+      purchased: result.status === 'PURCHASED',
+      item: this.toStoreItem(
+        definition,
+        true,
+        summary.balance,
+        equippedItemIds.includes(definition.id),
+      ),
+    };
+  }
+
+  async setStoreItemEquipped(
+    userId: string,
+    itemId: string,
+    equipped: boolean,
+  ): Promise<StorefrontResponse> {
+    const definition = STORE_CATALOG.find((item) => item.id === itemId);
+    if (!definition) {
+      throw new NotFoundException('La recompensa seleccionada no existe.');
+    }
+
+    const result = await this.points.setStoreItemEquipped({
+      userId,
+      itemId: definition.id,
+      categoryItemIds: STORE_CATALOG.filter(
+        (item) => item.category === definition.category,
+      ).map((item) => item.id),
+      equipped,
+    });
+
+    if (result.status === 'NOT_OWNED') {
+      throw new ForbiddenException(
+        'Debes canjear esta recompensa antes de poder aplicarla.',
+      );
+    }
+
+    return this.getStore(userId);
+  }
+
+  private toStoreItem(
+    definition: StoreItemDefinition,
+    owned: boolean,
+    balance: number,
+    equipped: boolean,
+  ): StoreItem {
+    return {
+      ...definition,
+      colors: [...definition.colors],
+      owned,
+      canAfford: owned || balance >= definition.cost,
+      equipped,
+    };
   }
 
   private isRewardedPomodoro(session: PomodoroSession): boolean {

@@ -2,7 +2,7 @@ import { TaskResponseMapper } from '../../../../tasks/application/common/mapper/
 import { Task } from '../../../../tasks/domain/entities/task.entity';
 import { User } from '../../../../users/domain/entities/user.entity';
 import { UserSettingsResponse } from '../../../../settings/application/common/responses/user-settings.response';
-import { RewardSummary } from '../../../../rewards/domain/models/reward.model';
+import { StorefrontResponse } from '../../../../rewards/domain/models/reward.model';
 import { DashboardModel } from '../../../domain/models/dashboard.model';
 import { DashboardResponse } from '../responses/dashboard.response';
 
@@ -12,7 +12,7 @@ export class DashboardResponseMapper {
     tasks: Task[],
     user: User,
     settings: UserSettingsResponse,
-    rewards: RewardSummary,
+    rewardStore: StorefrontResponse,
   ): DashboardResponse {
     return {
       user: {
@@ -27,7 +27,9 @@ export class DashboardResponseMapper {
 
       settings,
 
-      rewards,
+      rewards: rewardStore.summary,
+
+      rewardStore,
 
       tasks: TaskResponseMapper.toResponseList(tasks),
 

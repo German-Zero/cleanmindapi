@@ -9,6 +9,10 @@ import {
   AwardPointsInput,
   AwardPointsResult,
   PointsRepository,
+  RedeemStoreItemInput,
+  RedeemStoreItemResult,
+  SetStoreItemEquippedInput,
+  SetStoreItemEquippedResult,
 } from '../../domain/repositories/points.repository';
 
 type PointsClient = Pick<Prisma.TransactionClient, 'pointTransaction'>;
@@ -28,11 +32,7 @@ export class PrismaPointsRepository implements PointsRepository {
 
   async award(input: AwardPointsInput): Promise<AwardPointsResult> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`
-        SELECT pg_advisory_xact_lock(
-          hashtextextended(${input.userId}, 0)
-        ) AS locked
-      `;
+      await this.lockUserPoints(tx, input.userId);
 
       const existing = await tx.pointTransaction.findUnique({
         where: {
@@ -82,6 +82,136 @@ export class PrismaPointsRepository implements PointsRepository {
 
   async getSummary(userId: string, periodKey: string): Promise<PointsTotals> {
     return this.calculateTotals(this.prisma, userId, periodKey);
+  }
+
+  async getOwnedStoreItemIds(userId: string): Promise<string[]> {
+    const transactions = await this.prisma.pointTransaction.findMany({
+      where: {
+        userId,
+        type: PrismaPointTransactionType.STORE_REDEMPTION,
+      },
+      select: { sourceId: true },
+    });
+
+    return transactions.map((transaction) => transaction.sourceId);
+  }
+
+  async getEquippedStoreItemIds(userId: string): Promise<string[]> {
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { equippedStoreItems: true },
+    });
+
+    return settings?.equippedStoreItems ?? [];
+  }
+
+  async redeemStoreItem(
+    input: RedeemStoreItemInput,
+  ): Promise<RedeemStoreItemResult> {
+    return this.prisma.$transaction(async (tx) => {
+      await this.lockUserPoints(tx, input.userId);
+
+      const existing = await tx.pointTransaction.findUnique({
+        where: {
+          userId_type_sourceId: {
+            userId: input.userId,
+            type: PrismaPointTransactionType.STORE_REDEMPTION,
+            sourceId: input.itemId,
+          },
+        },
+        select: { id: true },
+      });
+      const totals = await this.calculateTotals(
+        tx,
+        input.userId,
+        input.periodKey,
+      );
+
+      if (existing) {
+        return { status: 'OWNED', ...totals };
+      }
+
+      if (totals.balance < input.cost) {
+        return { status: 'INSUFFICIENT_POINTS', ...totals };
+      }
+
+      await tx.pointTransaction.create({
+        data: {
+          userId: input.userId,
+          type: PrismaPointTransactionType.STORE_REDEMPTION,
+          sourceId: input.itemId,
+          amount: -input.cost,
+          periodKey: input.periodKey,
+        },
+      });
+
+      return {
+        status: 'PURCHASED',
+        balance: totals.balance - input.cost,
+        earnedThisMonth: totals.earnedThisMonth,
+      };
+    });
+  }
+
+  async setStoreItemEquipped(
+    input: SetStoreItemEquippedInput,
+  ): Promise<SetStoreItemEquippedResult> {
+    return this.prisma.$transaction(async (tx) => {
+      await this.lockUserPoints(tx, input.userId);
+
+      if (input.equipped) {
+        const redemption = await tx.pointTransaction.findUnique({
+          where: {
+            userId_type_sourceId: {
+              userId: input.userId,
+              type: PrismaPointTransactionType.STORE_REDEMPTION,
+              sourceId: input.itemId,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (!redemption) {
+          return { status: 'NOT_OWNED', equippedItemIds: [] };
+        }
+      }
+
+      const settings = await tx.userSettings.findUnique({
+        where: { userId: input.userId },
+        select: { equippedStoreItems: true },
+      });
+      const current = settings?.equippedStoreItems ?? [];
+      const next = input.equipped
+        ? [
+            ...current.filter(
+              (itemId) => !input.categoryItemIds.includes(itemId),
+            ),
+            input.itemId,
+          ]
+        : current.filter((itemId) => itemId !== input.itemId);
+
+      await tx.userSettings.upsert({
+        where: { userId: input.userId },
+        create: {
+          userId: input.userId,
+          equippedStoreItems: next,
+        },
+        update: { equippedStoreItems: next },
+      });
+
+      return { status: 'UPDATED', equippedItemIds: next };
+    });
+  }
+
+  private async lockUserPoints(
+    tx: Prisma.TransactionClient,
+    userId: string,
+  ): Promise<void> {
+    await tx.$queryRaw`
+      SELECT pg_advisory_xact_lock(
+        hashtextextended(${userId}, 0)
+      )::text AS locked
+    `;
   }
 
   private async calculateTotals(

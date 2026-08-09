@@ -25,6 +25,10 @@ describe('GetDashboardUseCase', () => {
       monthlyLimit: 100,
       remainingThisMonth: 80,
     };
+    const rewardStore = {
+      summary: rewardsSummary,
+      items: [],
+    };
     const user = { id: 'user-1' };
     const settings = { theme: 'LUNAR_MIND' };
     const dashboard = {
@@ -37,6 +41,7 @@ describe('GetDashboardUseCase', () => {
     };
     const response = {
       rewards: rewardsSummary,
+      rewardStore,
     } as unknown as DashboardResponse;
     const taskRepository = {
       findAllByUser: jest.fn().mockResolvedValue(tasks),
@@ -54,7 +59,7 @@ describe('GetDashboardUseCase', () => {
       execute: jest.fn().mockResolvedValue(settings),
     } as unknown as GetSettingsPort;
     const rewards = {
-      getSummary: jest.fn().mockResolvedValue(rewardsSummary),
+      getStore: jest.fn().mockResolvedValue(rewardStore),
     } as unknown as RewardsService;
     const mapper = jest
       .spyOn(DashboardResponseMapper, 'toResponse')
@@ -71,13 +76,13 @@ describe('GetDashboardUseCase', () => {
     await expect(
       useCase.execute(new GetDashboardCommand('user-1')),
     ).resolves.toBe(response);
-    expect(rewards.getSummary).toHaveBeenCalledWith('user-1');
+    expect(rewards.getStore).toHaveBeenCalledWith('user-1');
     expect(mapper).toHaveBeenCalledWith(
       dashboard,
       tasks,
       user,
       settings,
-      rewardsSummary,
+      rewardStore,
     );
 
     mapper.mockRestore();

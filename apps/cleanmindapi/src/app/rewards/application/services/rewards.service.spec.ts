@@ -1,9 +1,18 @@
 import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
   PomodoroBreakType,
   PomodoroSession,
   PomodoroSessionStatus,
 } from '../../../pomodoro/domain/models/pomodoro.model';
 import { PointTransactionType } from '../../domain/enums/point-transaction-type.enum';
+import {
+  StoreItemCategory,
+  StoreItemId,
+} from '../../domain/models/reward.model';
 import { PointsRepository } from '../../domain/repositories/points.repository';
 import { RewardsService } from './rewards.service';
 
@@ -22,6 +31,21 @@ describe('RewardsService', () => {
       award: jest.fn().mockResolvedValue(repositoryResult),
       getSummary: jest.fn().mockResolvedValue({
         balance: 40,
+        earnedThisMonth: 30,
+      }),
+      getOwnedStoreItemIds: jest
+        .fn()
+        .mockResolvedValue([StoreItemId.BORDER_AURORA]),
+      getEquippedStoreItemIds: jest
+        .fn()
+        .mockResolvedValue([StoreItemId.BORDER_AURORA]),
+      setStoreItemEquipped: jest.fn().mockResolvedValue({
+        status: 'UPDATED',
+        equippedItemIds: [StoreItemId.BORDER_AURORA],
+      }),
+      redeemStoreItem: jest.fn().mockResolvedValue({
+        status: 'PURCHASED',
+        balance: 5,
         earnedThisMonth: 30,
       }),
       ...overrides,
@@ -219,5 +243,167 @@ describe('RewardsService', () => {
       monthlyLimit: 100,
       remainingThisMonth: 70,
     });
+  });
+
+  it('expone el catálogo completo y marca las recompensas del usuario', async () => {
+    const { service } = createService();
+
+    const store = await service.getStore(
+      'user-1',
+      new Date('2026-08-08T12:00:00.000Z'),
+    );
+
+    expect(store.items).toHaveLength(19);
+    expect(
+      store.items.filter((item) => item.category === StoreItemCategory.PALETTE),
+    ).toHaveLength(6);
+    expect(
+      store.items.filter(
+        (item) => item.category === StoreItemCategory.BACKGROUND,
+      ),
+    ).toHaveLength(4);
+    expect(
+      store.items.filter((item) => item.category === StoreItemCategory.BORDER),
+    ).toHaveLength(4);
+    expect(
+      store.items.filter((item) => item.category === StoreItemCategory.EFFECT),
+    ).toHaveLength(3);
+    expect(
+      store.items.filter((item) => item.category === StoreItemCategory.POMODORO),
+    ).toHaveLength(1);
+    expect(
+      store.items.filter((item) => item.category === StoreItemCategory.CALENDAR),
+    ).toHaveLength(1);
+    expect(
+      store.items.find((item) => item.id === StoreItemId.BORDER_AURORA),
+    ).toMatchObject({
+      owned: true,
+      canAfford: true,
+      equipped: true,
+    });
+    expect(store.summary.balance).toBe(40);
+  });
+
+  it('canjea una recompensa con el costo definido por el catálogo', async () => {
+    const { service, repository } = createService();
+
+    const result = await service.purchaseStoreItem(
+      'user-1',
+      StoreItemId.BORDER_AURORA,
+      new Date('2026-08-08T12:00:00.000Z'),
+    );
+
+    expect(repository.redeemStoreItem).toHaveBeenCalledWith({
+      userId: 'user-1',
+      itemId: StoreItemId.BORDER_AURORA,
+      cost: 35,
+      periodKey: '2026-08',
+    });
+    expect(result).toMatchObject({
+      purchased: true,
+      summary: { balance: 5, earnedThisMonth: 30 },
+      item: { id: StoreItemId.BORDER_AURORA, owned: true },
+    });
+  });
+
+  it('responde de forma idempotente si la recompensa ya fue canjeada', async () => {
+    const { service } = createService({
+      redeemStoreItem: jest.fn().mockResolvedValue({
+        status: 'OWNED',
+        balance: 40,
+        earnedThisMonth: 30,
+      }),
+    });
+
+    const result = await service.purchaseStoreItem(
+      'user-1',
+      StoreItemId.BORDER_AURORA,
+    );
+
+    expect(result.purchased).toBe(false);
+    expect(result.summary.balance).toBe(40);
+    expect(result.item.owned).toBe(true);
+  });
+
+  it('rechaza el canje cuando el saldo no alcanza', async () => {
+    const { service } = createService({
+      redeemStoreItem: jest.fn().mockResolvedValue({
+        status: 'INSUFFICIENT_POINTS',
+        balance: 10,
+        earnedThisMonth: 30,
+      }),
+    });
+
+    await expect(
+      service.purchaseStoreItem('user-1', StoreItemId.BORDER_AURORA),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rechaza identificadores que no pertenecen al catálogo', async () => {
+    const { service, repository } = createService();
+
+    await expect(
+      service.purchaseStoreItem('user-1', 'UNKNOWN_ITEM'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.redeemStoreItem).not.toHaveBeenCalled();
+  });
+
+  it('equipa una recompensa adquirida y reemplaza otra de la misma categoría', async () => {
+    const { service, repository } = createService();
+
+    const store = await service.setStoreItemEquipped(
+      'user-1',
+      StoreItemId.BORDER_AURORA,
+      true,
+    );
+
+    expect(repository.setStoreItemEquipped).toHaveBeenCalledWith({
+      userId: 'user-1',
+      itemId: StoreItemId.BORDER_AURORA,
+      categoryItemIds: [
+        StoreItemId.BORDER_AURORA,
+        StoreItemId.BORDER_SUNSET,
+        StoreItemId.BORDER_OCEAN_PULSE,
+        StoreItemId.BORDER_GILDED_MOSS,
+      ],
+      equipped: true,
+    });
+    expect(
+      store.items.find((item) => item.id === StoreItemId.BORDER_AURORA)
+        ?.equipped,
+    ).toBe(true);
+  });
+
+  it('permite quitar una recompensa equipada', async () => {
+    const { service, repository } = createService({
+      getEquippedStoreItemIds: jest.fn().mockResolvedValue([]),
+    });
+
+    const store = await service.setStoreItemEquipped(
+      'user-1',
+      StoreItemId.BORDER_AURORA,
+      false,
+    );
+
+    expect(repository.setStoreItemEquipped).toHaveBeenCalledWith(
+      expect.objectContaining({ equipped: false }),
+    );
+    expect(
+      store.items.find((item) => item.id === StoreItemId.BORDER_AURORA)
+        ?.equipped,
+    ).toBe(false);
+  });
+
+  it('rechaza equipar una recompensa no adquirida', async () => {
+    const { service } = createService({
+      setStoreItemEquipped: jest.fn().mockResolvedValue({
+        status: 'NOT_OWNED',
+        equippedItemIds: [],
+      }),
+    });
+
+    await expect(
+      service.setStoreItemEquipped('user-1', StoreItemId.BORDER_AURORA, true),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

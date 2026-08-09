@@ -23,12 +23,12 @@ export class GetDashboardUseCase implements GetDashboardPort {
   ) {}
 
   async execute(command: GetDashboardCommand): Promise<DashboardResponse> {
-    const [tasks, pomodoro, user, settings, rewards] = await Promise.all([
+    const [tasks, pomodoro, user, settings, rewardStore] = await Promise.all([
       this.taskRepository.findAllByUser(command.userId),
       this.pomodoroService.getSummary(command.userId),
       this.getCurrentUser.execute(command.userId),
       this.getSettings.execute(new GetSettingsCommand(command.userId)),
-      this.rewardsService.getSummary(command.userId),
+      this.rewardsService.getStore(command.userId),
     ]);
 
     const dashboard = this.dashboardBuilder.build(tasks, pomodoro.today);
@@ -38,7 +38,7 @@ export class GetDashboardUseCase implements GetDashboardPort {
       tasks,
       user,
       settings,
-      rewards,
+      rewardStore,
     );
   }
 }

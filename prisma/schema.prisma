@@ -347,8 +347,9 @@ model UserSettings {
   id     String @id @default(uuid())
   userId String @unique
 
-  theme            Theme            @default(LUNAR_MIND)
-  backgroundMotion BackgroundMotion @default(NONE)
+  theme              Theme            @default(LUNAR_MIND)
+  backgroundMotion   BackgroundMotion @default(NONE)
+  equippedStoreItems String[]         @default([])
 
   emailNotifications    Boolean @default(true)
   whatsappNotifications Boolean @default(false)
