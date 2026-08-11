@@ -17,7 +17,6 @@ export class CraeteTaskRequest {
   @IsBoolean()
   isUrgent!: boolean;
 
-  @IsOptional()
   @IsDateString()
   dueDate?: string;
 }
