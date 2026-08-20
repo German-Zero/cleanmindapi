@@ -221,10 +221,10 @@ export const STORE_CATALOG: readonly StoreItemDefinition[] = [
   {
     id: StoreItemId.POMODORO_BLOOM_RING,
     category: StoreItemCategory.POMODORO,
-    name: 'Corona de Flores',
-    description: 'Pequeñas flores suaves alrededor del cronómetro Pomodoro.',
+    name: 'Jardín Flotante',
+    description: 'Margaritas, girasoles, rosas y tulipanes flotan suavemente por el Pomodoro.',
     cost: 70,
-    colors: ['#F3A6C8', '#BFA8FF', '#82D8C2'],
+    colors: ['#FFF9E8', '#F2B43C', '#E8799E', '#B77CE5'],
   },
   {
     id: StoreItemId.CALENDAR_TIDAL_WAVE,

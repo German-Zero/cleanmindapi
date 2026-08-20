@@ -450,7 +450,7 @@ export class AuthController {
 
     const destination = response.user.requiresTermsAcceptance
       ? '/terms'
-      : '/dashboard/calendar';
+      : '/dashboard';
 
     res.redirect(
       HttpStatus.FOUND,
