@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { RewardsService } from '../../../rewards/application/services/rewards.service';
 import { TaskRepository } from '../../../tasks/domain/repositories/task.repository';
 import {
   PomodoroBreakType,
@@ -40,6 +41,7 @@ describe('PomodoroService', () => {
     overrides: {
       repository?: Partial<PomodoroRepository>;
       tasks?: Partial<TaskRepository>;
+      rewards?: Partial<RewardsService>;
     } = {},
   ) {
     const repository = {
@@ -60,11 +62,22 @@ describe('PomodoroService', () => {
       findById: jest.fn(),
       ...overrides.tasks,
     } as unknown as TaskRepository;
+    const rewards = {
+      awardPomodoroCompletion: jest.fn().mockResolvedValue({
+        pointsAwarded: 2,
+        balance: 22,
+        earnedThisMonth: 12,
+        monthlyLimit: 100,
+        remainingThisMonth: 88,
+      }),
+      ...overrides.rewards,
+    } as unknown as RewardsService;
 
     return {
-      service: new PomodoroService(repository, tasks),
+      service: new PomodoroService(repository, tasks, rewards),
       repository,
       tasks,
+      rewards,
     };
   }
 
@@ -75,10 +88,7 @@ describe('PomodoroService', () => {
       },
     });
 
-    const state = await service.getState(
-      'user-id',
-      7,
-    );
+    const state = await service.getState('user-id', 7);
 
     expect(state.settings).toBe(settings);
     expect(state.activeSession).toBe(activeSession);
@@ -216,5 +226,61 @@ describe('PomodoroService', () => {
       }),
     );
     expect(summary.daily).toHaveLength(7);
+  });
+
+  it('otorga puntos cuando completa una sesión de enfoque', async () => {
+    const completed = {
+      ...activeSession,
+      status: PomodoroSessionStatus.COMPLETED,
+      actualFocusSeconds: 1500,
+      actualBreakSeconds: 300,
+      endedAt: new Date('2026-07-21T12:30:00.000Z'),
+    };
+    const { service, rewards } = createService({
+      repository: {
+        finishActiveSession: jest.fn().mockResolvedValue(completed),
+      },
+    });
+
+    const result = await service.completeSession(
+      'user-id',
+      'session-id',
+      1500,
+      300,
+    );
+
+    expect(rewards.awardPomodoroCompletion).toHaveBeenCalledWith(
+      'user-id',
+      completed,
+    );
+    expect(result.reward.pointsAwarded).toBe(2);
+  });
+
+  it('recupera una finalización repetida sin duplicar la recompensa', async () => {
+    const completed = {
+      ...activeSession,
+      status: PomodoroSessionStatus.COMPLETED,
+      actualFocusSeconds: 1500,
+      endedAt: new Date('2026-07-21T12:25:00.000Z'),
+    };
+    const { service, rewards } = createService({
+      repository: {
+        finishActiveSession: jest.fn().mockResolvedValue(null),
+        findSessionByIdAndUserId: jest.fn().mockResolvedValue(completed),
+      },
+    });
+
+    const result = await service.completeSession(
+      'user-id',
+      'session-id',
+      1500,
+      0,
+    );
+
+    expect(rewards.awardPomodoroCompletion).toHaveBeenCalledWith(
+      'user-id',
+      completed,
+    );
+    expect(result.reward.pointsAwarded).toBe(2);
   });
 });

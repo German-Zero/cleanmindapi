@@ -23,6 +23,13 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum PointTransactionType {
+  TASK_COMPLETED
+  POMODORO_COMPLETED
+  STORE_REDEMPTION
+  ADMIN_ADJUSTMENT
+}
+
 model User {
   id                    String                @id
   name                  String
@@ -49,6 +56,7 @@ model User {
   pomodoroSessions      PomodoroSession[]
   whiteboard            Whiteboard?
   termsAcceptances      UserTermsAcceptance[]
+  pointTransactions     PointTransaction[]
 
   @@map("users")
 }
@@ -190,6 +198,23 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model PointTransaction {
+  id        String               @id @default(uuid())
+  userId    String
+  type      PointTransactionType
+  sourceId  String
+  amount    Int
+  periodKey String               @db.VarChar(7)
+  createdAt DateTime             @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, sourceId])
+  @@index([userId, createdAt])
+  @@index([userId, periodKey, type])
+  @@map("point_transactions")
+}
+
 model Task {
   id String @id @default(uuid())
 
@@ -322,8 +347,9 @@ model UserSettings {
   id     String @id @default(uuid())
   userId String @unique
 
-  theme            Theme            @default(LUNAR_MIND)
-  backgroundMotion BackgroundMotion @default(NONE)
+  theme              Theme            @default(LUNAR_MIND)
+  backgroundMotion   BackgroundMotion @default(NONE)
+  equippedStoreItems String[]         @default([])
 
   emailNotifications    Boolean @default(true)
   whatsappNotifications Boolean @default(false)
