@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SettingsModule } from '../settings/settings.module';
 import { SharedMailModule } from '../shared/mail/shared-mail.module';
+import { PrismaModule } from '../shared/infrastructure/prisma/prisma.module';
 
 import { NOTIFICATION_SENDERS } from './application/common/notification.constants';
 
@@ -20,12 +21,16 @@ import { NotificationTemplateService } from './infrastructure/templates/notifica
 import { DiscordConnectionController } from './api/controllers/discord-connection.controller';
 import { DiscordConnectionService } from './application/services/discord-connection.service';
 import { DiscordConnectionRepository } from './domain/repositories/discord-connection.repository';
+import { TaskReminderRepository } from './domain/repositories/task-reminder.repository';
 import { DiscordApiService } from './infrastructure/discord/discord-api.service';
+import { DiscordApiPort } from './application/ports/outbound/discord-api.port';
 import { PrismaDiscordConnectionRepository } from './infrastructure/discord/prisma-discord-connection.repository';
 import { DiscordServerWebhookService } from './infrastructure/discord/discord-server-webhook.service';
+import { PrismaTaskReminderRepository } from './infrastructure/repositories/prisma-task-reminder.repository';
+import { DiscordConnectionPort } from './application/ports/inbound/discord-connection.port';
 
 @Module({
-  imports: [ConfigModule, SettingsModule, SharedMailModule],
+  imports: [ConfigModule, SettingsModule, SharedMailModule, PrismaModule],
   controllers: [DiscordConnectionController],
   providers: [
     // Factory
@@ -35,9 +40,22 @@ import { DiscordServerWebhookService } from './infrastructure/discord/discord-se
     NotificationDispatcherService,
     TaskReminderScheduler,
     DiscordConnectionService,
+    {
+      provide: DiscordConnectionPort,
+      useExisting: DiscordConnectionService,
+    },
     DiscordApiService,
+    {
+      provide: DiscordApiPort,
+      useExisting: DiscordApiService,
+    },
     DiscordServerWebhookService,
     PrismaDiscordConnectionRepository,
+    PrismaTaskReminderRepository,
+    {
+      provide: TaskReminderRepository,
+      useExisting: PrismaTaskReminderRepository,
+    },
     {
       provide: DiscordConnectionRepository,
       useExisting: PrismaDiscordConnectionRepository,

@@ -36,6 +36,18 @@ export interface PomodoroSession {
   accumulatedPausedSeconds: number;
 }
 
+export interface PomodoroSessionPauseUpdate {
+  pausedAt: Date | null;
+  accumulatedPausedSeconds: number;
+}
+
+export interface PomodoroSessionFinishUpdate {
+  status: Exclude<PomodoroSessionStatus, PomodoroSessionStatus.ACTIVE>;
+  actualFocusSeconds: number;
+  actualBreakSeconds: number;
+  endedAt: Date;
+}
+
 export interface PomodoroDailySummary {
   date: string;
   focusSeconds: number;

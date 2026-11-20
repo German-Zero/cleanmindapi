@@ -8,6 +8,6 @@ export interface TermsVersionRecord {
 
 export abstract class TermsRepository {
   abstract findCurrent(now: Date): Promise<TermsVersionRecord | null>;
-  abstract hasAccepted(userId: string, termsVersionId: string): Promise<boolean>;
+  abstract hasAccepted( userId: string, termsVersionId: string, ): Promise<boolean>;
   abstract accept(userId: string, termsVersionId: string): Promise<void>;
 }

@@ -3,7 +3,8 @@ import { JwtPayload } from '../../../auth/application/common/jwt-payload';
 import { CurrentUser } from '../../../shared/security/decorators/current-user.decorator';
 import { TermsOptional } from '../../../shared/security/decorators/terms-optional.decorator';
 import { JwtAuthGuard } from '../../../shared/security/guards/jwt-auth.guard';
-import { TermsService, TermsStatus } from '../../application/terms.service';
+import { TermsStatus } from '../../application/common/terms-status';
+import { TermsPort } from '../../application/ports/inbound/terms.port';
 
 interface TermsStatusResponse extends Omit<TermsStatus, 'effectiveAt'> {
   effectiveAt: string;
@@ -13,7 +14,7 @@ interface TermsStatusResponse extends Omit<TermsStatus, 'effectiveAt'> {
 @UseGuards(JwtAuthGuard)
 @TermsOptional()
 export class TermsController {
-  constructor(private readonly terms: TermsService) {}
+  constructor(private readonly terms: TermsPort) {}
 
   @Get('current')
   async current(@CurrentUser() user: JwtPayload): Promise<TermsStatusResponse> {

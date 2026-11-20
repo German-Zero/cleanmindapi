@@ -7,9 +7,7 @@ describe('DeleteAccountUseCase', () => {
     existsById: jest.fn(),
     delete: jest.fn(),
   };
-  const useCase = new DeleteAccountUseCase(
-    users as unknown as UserRepository,
-  );
+  const useCase = new DeleteAccountUseCase(users as unknown as UserRepository);
 
   beforeEach(() => {
     users.existsById.mockReset();

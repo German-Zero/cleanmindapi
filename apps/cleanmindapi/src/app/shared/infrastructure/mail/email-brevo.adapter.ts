@@ -4,10 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { HandlebarsService } from '../../mail/helpers/handlebars.service';
 import { BrevoMailService } from '../../mail/brevo-mail.service';
 import { MailTemplate } from '../../mail/enums/mail-template.enum';
-import {
-  EMAIL_VERIFICATION_EXPIRATION_MINUTES,
-  PASSWORD_RESET_EXPIRATION_MINUTES,
-} from '../../application/auth-token-expiration.constants';
+import { EMAIL_VERIFICATION_EXPIRATION_MINUTES, PASSWORD_RESET_EXPIRATION_MINUTES } from '../../application/auth-token-expiration.constants';
 
 @Injectable()
 export class BrevoMailAdapter implements MailPort {

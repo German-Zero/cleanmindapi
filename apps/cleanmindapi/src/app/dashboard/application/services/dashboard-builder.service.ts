@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { DashboardModel } from "../../domain/models/dashboard.model";
-import { Task } from "../../../tasks/domain/entities/task.entity";
-import { TaskStatus } from "../../../tasks/domain/enums/task-status.enum";
-import { TaskQuadrant } from "@prisma/client";
-import { PomodoroSummary } from "../../../pomodoro/domain/models/pomodoro.model";
+import { Injectable } from '@nestjs/common';
+import { DashboardModel } from '../../domain/models/dashboard.model';
+import { Task } from '../../../tasks/domain/entities/task.entity';
+import { TaskStatus } from '../../../tasks/domain/enums/task-status.enum';
+import { TaskQuadrant } from '../../../tasks/domain/enums/task-quadrant.enum';
+import { PomodoroSummary } from '../../../pomodoro/domain/models/pomodoro.model';
 
 @Injectable()
 export class DashboardBuilderService {
@@ -17,46 +17,25 @@ export class DashboardBuilderService {
       summary: {
         total: tasks.length,
 
-        todo: this.countByStatus(
-          tasks,
-          TaskStatus.TODO,
-        ),
+        todo: this.countByStatus(tasks, TaskStatus.TODO),
 
-        inProgress: this.countByStatus(
-          tasks,
-          TaskStatus.IN_PROGRESS,
-        ),
+        inProgress: this.countByStatus(tasks, TaskStatus.IN_PROGRESS),
 
-        completed: this.countByStatus(
-          tasks,
-          TaskStatus.COMPLETED,
-        ),
+        completed: this.countByStatus(tasks, TaskStatus.COMPLETED),
       },
 
       quadrants: {
-        do: this.countByQuadrant(
-          tasks,
-          TaskQuadrant.DO,
-        ),
+        do: this.countByQuadrant(tasks, TaskQuadrant.DO),
 
-        plan: this.countByQuadrant(
-          tasks,
-          TaskQuadrant.PLAN,
-        ),
+        plan: this.countByQuadrant(tasks, TaskQuadrant.PLAN),
 
-        delegate: this.countByQuadrant(
-          tasks,
-          TaskQuadrant.DELEGATE,
-        ),
+        delegate: this.countByQuadrant(tasks, TaskQuadrant.DELEGATE),
 
-        delete: this.countByQuadrant(
-          tasks,
-          TaskQuadrant.DELETE,
-        ),
+        delete: this.countByQuadrant(tasks, TaskQuadrant.DELETE),
       },
 
       today: tasks.filter(
-        task =>
+        (task) =>
           task.dueDate !== null &&
           task.dueDate >= startOfToday &&
           task.dueDate <= endOfToday &&
@@ -64,14 +43,14 @@ export class DashboardBuilderService {
       ),
 
       overdue: tasks.filter(
-        task =>
+        (task) =>
           task.dueDate !== null &&
           task.dueDate < startOfToday &&
           task.status !== TaskStatus.COMPLETED,
       ),
 
       upcoming: tasks.filter(
-        task =>
+        (task) =>
           task.dueDate !== null &&
           task.dueDate > endOfToday &&
           task.status !== TaskStatus.COMPLETED,
@@ -82,15 +61,11 @@ export class DashboardBuilderService {
   }
 
   private countByStatus(tasks: Task[], status: TaskStatus): number {
-    return tasks.filter(
-      task => task.status === status,
-    ).length;
+    return tasks.filter((task) => task.status === status).length;
   }
 
-  private countByQuadrant( tasks: Task[], quadrant: TaskQuadrant, ): number {
-    return tasks.filter(
-      task => task.quadrant === quadrant,
-    ).length;
+  private countByQuadrant(tasks: Task[], quadrant: TaskQuadrant): number {
+    return tasks.filter((task) => task.quadrant === quadrant).length;
   }
 
   private startOfDay(date: Date): Date {

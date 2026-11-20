@@ -1,17 +1,17 @@
-import { BadRequestException } from "@nestjs/common";
+import { InvalidPasswordException } from '../exceptions/invalid-password.exception';
 
 export class Password {
   private readonly value: string;
 
   constructor(password: string) {
     if (password.length < 8) {
-      throw new BadRequestException('La contraseña debe tener al menos 8 caracteres.');
+      throw new InvalidPasswordException();
     }
 
-    this.value = password
+    this.value = password;
   }
 
   getValue(): string {
-    return this.value
+    return this.value;
   }
 }

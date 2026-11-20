@@ -1,19 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { User } from "../../domain/entities/user.entity";
-import { Email } from "../../domain/value-objects/email.vo";
-import { PrismaService } from "../../../shared/infrastructure/prisma/prisma.service";
-import { UserMapper } from "../mappers/user.mapper";
-import { UserCapacityReachedException } from "../../domain/exceptions/user-capacity-reached.exception";
+import { Injectable } from '@nestjs/common';
+import { UserRepository } from '../../domain/repositories/user.repository';
+import { User } from '../../domain/entities/user.entity';
+import { Email } from '../../domain/value-objects/email.vo';
+import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
+import { UserMapper } from '../mappers/user.mapper';
+import { UserCapacityReachedException } from '../../domain/exceptions/user-capacity-reached.exception';
 
 const BETA_REGISTRATION_LOCK_NAMESPACE = 20_260_806;
 const BETA_REGISTRATION_LOCK_KEY = 1;
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   count(): Promise<number> {
     return this.prisma.user.count();
@@ -42,9 +40,11 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async update(user: User): Promise<User> {
+    if (!user.id) throw new Error('Cannot update a user without an id.');
+
     const updated = await this.prisma.user.update({
       where: {
-        id: user.id!,
+        id: user.id,
       },
       data: UserMapper.toPersistence(user),
     });
@@ -61,19 +61,19 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async existsById(id: string): Promise<boolean> {
-  const user = await this.prisma.user.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-    },
-  });
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-  return !!user;
-}
+    return !!user;
+  }
 
-  async findByEmail(email: Email): Promise<User |null> {
+  async findByEmail(email: Email): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         email: email.getValue(),

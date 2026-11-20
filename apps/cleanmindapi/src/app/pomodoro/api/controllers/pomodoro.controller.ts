@@ -1,28 +1,10 @@
-import {
-  Body,
-  Controller,
-  DefaultValuePipe,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtPayload } from '../../../auth/application/common/jwt-payload';
 import { CurrentUser } from '../../../shared/security/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../../shared/security/guards/jwt-auth.guard';
-import { PomodoroService } from '../../application/services/pomodoro.service';
-import {
-  PomodoroBreakType,
-  PomodoroSession,
-  PomodoroSettings,
-  PomodoroState,
-  PomodoroSummary,
-} from '../../domain/models/pomodoro.model';
+import { PomodoroCommandPort } from '../../application/ports/inbound/pomodoro-command.port';
+import { PomodoroQueryPort } from '../../application/ports/inbound/pomodoro-query.port';
+import { PomodoroBreakType, PomodoroSession, PomodoroSettings, PomodoroState, PomodoroSummary } from '../../domain/models/pomodoro.model';
 import { FinishPomodoroSessionRequest } from '../requests/finish-pomodoro-session.request';
 import { StartPomodoroSessionRequest } from '../requests/start-pomodoro-session.request';
 import { UpdatePomodoroSettingsRequest } from '../requests/update-pomodoro-settings.request';
@@ -30,13 +12,16 @@ import { UpdatePomodoroSettingsRequest } from '../requests/update-pomodoro-setti
 @UseGuards(JwtAuthGuard)
 @Controller('pomodoro')
 export class PomodoroController {
-  constructor(private readonly pomodoro: PomodoroService) {}
+  constructor(
+    private readonly queries: PomodoroQueryPort,
+    private readonly commands: PomodoroCommandPort,
+  ) {}
 
   @Get('settings')
   async getSettings(
     @CurrentUser() user: JwtPayload,
   ): Promise<PomodoroSettings> {
-    return this.pomodoro.getSettings(user.sub);
+    return this.queries.getSettings(user.sub);
   }
 
   @Patch('settings')
@@ -44,7 +29,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Body() request: UpdatePomodoroSettingsRequest,
   ): Promise<PomodoroSettings> {
-    return this.pomodoro.updateSettings(user.sub, request);
+    return this.commands.updateSettings(user.sub, request);
   }
 
   @Get('state')
@@ -52,17 +37,14 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
   ): Promise<PomodoroState> {
-    return this.pomodoro.getState(
-      user.sub,
-      days,
-    );
+    return this.queries.getState(user.sub, days);
   }
 
   @Get('sessions/active')
   async getActiveSession(
     @CurrentUser() user: JwtPayload,
   ): Promise<PomodoroSession | null> {
-    return this.pomodoro.getActiveSession(user.sub);
+    return this.queries.getActiveSession(user.sub);
   }
 
   @Post('sessions')
@@ -71,7 +53,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Body() request: StartPomodoroSessionRequest,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.startSession(
+    return this.commands.startSession(
       user.sub,
       request.taskId ?? null,
       request.breakType ?? PomodoroBreakType.SHORT,
@@ -83,7 +65,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.pauseSession(user.sub, id);
+    return this.commands.pauseSession(user.sub, id);
   }
 
   @Patch('sessions/:id/resume')
@@ -91,7 +73,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.resumeSession(user.sub, id);
+    return this.commands.resumeSession(user.sub, id);
   }
 
   @Patch('sessions/:id/complete')
@@ -100,7 +82,7 @@ export class PomodoroController {
     @Param('id') id: string,
     @Body() request: FinishPomodoroSessionRequest,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.completeSession(
+    return this.commands.completeSession(
       user.sub,
       id,
       request.actualFocusSeconds,
@@ -114,7 +96,7 @@ export class PomodoroController {
     @Param('id') id: string,
     @Body() request: FinishPomodoroSessionRequest,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.interruptSession(
+    return this.commands.interruptSession(
       user.sub,
       id,
       request.actualFocusSeconds,
@@ -128,7 +110,7 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
   ): Promise<PomodoroSession> {
-    return this.pomodoro.cancelSession(user.sub, id);
+    return this.commands.cancelSession(user.sub, id);
   }
 
   @Get('summary')
@@ -136,6 +118,6 @@ export class PomodoroController {
     @CurrentUser() user: JwtPayload,
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
   ): Promise<PomodoroSummary> {
-    return this.pomodoro.getSummary(user.sub, days);
+    return this.queries.getSummary(user.sub, days);
   }
 }

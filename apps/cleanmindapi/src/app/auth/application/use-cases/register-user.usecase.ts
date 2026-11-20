@@ -1,4 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { ApplicationError } from '../../../shared/application/errors/application-error';
 import { RegisterUserPort } from '../ports/inbound/register-user.port';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { PasswordHasherPort } from '../ports/outbound/password-hasher.port';
@@ -9,18 +11,18 @@ import { TokenGeneratorPort } from '../ports/outbound/token-generator.port';
 import { MailPort } from '../ports/outbound/mail.port';
 import { VerificationTokenRepository } from '../../domain/repositories/verification-token.repository';
 import { RegisterUserCommand } from '../commands/register-user.command';
-import { AuthResponse } from '../../api/response/auth-response';
+import { AuthResponse } from '../common/responses/auth-response';
 import { Email } from '../../../users/domain/value-objects/email.vo';
 import { Password } from '../../../users/domain/value-objects/password.vo';
 import { EmailAlreadyExistsException } from '../../../users/domain/exceptions/email-already-exists.exception';
 import { User } from '../../../users/domain/entities/user.entity';
 import { RefreshToken } from '../../domain/entities/refresh-token.entity';
 import { VerificationToken } from '../../domain/entities/verification-token.entity';
-import { AuthResponseMapper } from '../../api/mapper/auth-response.mapper';
+import { AuthResponseMapper } from '../common/mappers/auth-response.mapper';
 import { UserSettingsRepository } from '../../../settings/domain/repositories/user-settings.repository';
 import { UserSettings } from '../../../settings/domain/entities/user-settings.entity';
 import { EMAIL_VERIFICATION_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
-import { TermsService } from '../../../legal/application/terms.service';
+import { TermsPort } from '../../../legal/application/ports/inbound/terms.port';
 import { ClosedBetaRegistrationService } from '../services/closed-beta-registration.service';
 
 @Injectable()
@@ -36,13 +38,16 @@ export class RegisterUserUseCase implements RegisterUserPort {
     private readonly tokenHasher: TokenHasherPort,
     private readonly verificationTokenRepository: VerificationTokenRepository,
     private readonly userSettingsRepository: UserSettingsRepository,
-    private readonly terms: TermsService,
+    private readonly terms: TermsPort,
     private readonly betaRegistration: ClosedBetaRegistrationService,
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<AuthResponse> {
     if (!command.acceptedTerms) {
-      throw new BadRequestException('Debes aceptar los términos y la política de privacidad.');
+      throw new ApplicationError(
+        'AUTH_INVALID_INPUT',
+        'Debes aceptar los términos y la política de privacidad.',
+      );
     }
 
     const email = new Email(command.email);
@@ -56,6 +61,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
     const passwordHash = await this.passwordHasher.hash(password);
 
     const user = User.createLocal({
+      id: randomUUID(),
       name: command.name,
       email,
       passwordHash,
@@ -87,6 +93,7 @@ export class RegisterUserUseCase implements RegisterUserPort {
     const codeHash = await this.tokenHasher.hash(code);
 
     const verification = VerificationToken.create({
+      id: randomUUID(),
       tokenHash: codeHash,
       userId: createdUser.id,
       expiresAt: new Date(

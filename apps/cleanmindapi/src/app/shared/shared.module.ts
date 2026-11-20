@@ -1,20 +1,12 @@
-import { Module } from "@nestjs/common";
-import { PrismaModule } from "./infrastructure/prisma/prisma.module";
-import { JwtStrategy } from "./security/strategies/jwt.strategy";
-import { JwtAuthGuard } from "./security/guards/jwt-auth.guard";
-import { JwtConfigModule } from "./infrastructure/jwt/jwt.module";
-import { CookieService } from "./application/services/cookie.service";
+import { Module } from '@nestjs/common';
+import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { JwtStrategy } from './security/strategies/jwt.strategy';
+import { JwtAuthGuard } from './security/guards/jwt-auth.guard';
+import { JwtConfigModule } from './infrastructure/jwt/jwt.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    JwtConfigModule,
-  ],
-  providers: [
-    JwtStrategy,
-    JwtAuthGuard,
-    CookieService,
-  ],
-  exports: [PrismaModule, JwtStrategy, JwtAuthGuard, JwtConfigModule, CookieService],
+  imports: [PrismaModule, JwtConfigModule],
+  providers: [JwtStrategy, JwtAuthGuard],
+  exports: [PrismaModule, JwtStrategy, JwtAuthGuard, JwtConfigModule],
 })
 export class SharedModule {}

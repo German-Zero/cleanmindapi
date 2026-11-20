@@ -1,10 +1,8 @@
-import { UserSettings } from "../../../domain/entities/user-settings.entity";
-import { UserSettingsResponse } from "../responses/user-settings.response";
+import { UserSettings } from '../../../domain/entities/user-settings.entity';
+import { UserSettingsResponse } from '../responses/user-settings.response';
 
 export class UserSettingsResponseMapper {
-  static toResponse(
-    settings: UserSettings,
-  ): UserSettingsResponse {
+  static toResponse(settings: UserSettings): UserSettingsResponse {
     return {
       theme: settings.theme,
       backgroundMotion: settings.backgroundMotion,

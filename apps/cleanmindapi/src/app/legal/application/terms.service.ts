@@ -1,23 +1,19 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ApplicationError } from '../../shared/application/errors/application-error';
 import { TermsRepository } from '../domain/repositories/terms.repository';
-
-export interface TermsStatus {
-  version: string;
-  title: string;
-  documentUrl: string;
-  effectiveAt: Date;
-  accepted: boolean;
-}
+import { TermsPort } from './ports/inbound/terms.port';
+import { TermsStatus } from './common/terms-status';
 
 @Injectable()
-export class TermsService {
+export class TermsService implements TermsPort {
   constructor(private readonly terms: TermsRepository) {}
 
   async getStatus(userId: string): Promise<TermsStatus> {
     const current = await this.terms.findCurrent(new Date());
 
     if (!current) {
-      throw new ServiceUnavailableException(
+      throw new ApplicationError(
+        'TERMS_UNAVAILABLE',
         'No hay una versión vigente de los términos.',
       );
     }
@@ -39,7 +35,8 @@ export class TermsService {
     const current = await this.terms.findCurrent(new Date());
 
     if (!current) {
-      throw new ServiceUnavailableException(
+      throw new ApplicationError(
+        'TERMS_UNAVAILABLE',
         'No hay una versión vigente de los términos.',
       );
     }

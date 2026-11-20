@@ -1,14 +1,13 @@
-import { RefreshToken } from "../entities/refresh-token.entity";
-
-
+import { RefreshToken } from '../entities/refresh-token.entity';
 
 export abstract class RefreshTokenRepository {
   abstract create(refreshToken: RefreshToken): Promise<RefreshToken>;
   abstract update(refreshToken: RefreshToken): Promise<RefreshToken>;
+  abstract rotate( current: RefreshToken, replacement: RefreshToken, ): Promise<boolean>;
   abstract findById(id: string): Promise<RefreshToken | null>;
   abstract findByTokenHash(tokenHash: string): Promise<RefreshToken | null>;
   abstract findByUserId(userId: string): Promise<RefreshToken[]>;
-  abstract revoke(id: string): Promise<void>
+  abstract revoke(id: string): Promise<void>;
   abstract revokeAllByUser(userId: string): Promise<void>;
-  abstract deleteExpired(): Promise<void>
+  abstract deleteExpired(): Promise<void>;
 }

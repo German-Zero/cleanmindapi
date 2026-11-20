@@ -6,9 +6,7 @@ import { DeleteAccountPort } from '../ports/inbound/delete-account.port';
 
 @Injectable()
 export class DeleteAccountUseCase implements DeleteAccountPort {
-  constructor(
-    private readonly users: UserRepository,
-  ) {}
+  constructor(private readonly users: UserRepository) {}
 
   async execute(userId: string): Promise<void> {
     if (!(await this.users.existsById(userId))) {

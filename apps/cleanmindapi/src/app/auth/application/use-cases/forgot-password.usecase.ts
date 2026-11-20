@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { PasswordResetToken } from '../../domain/entities/password-reset-token.entity';
 import { PasswordResetTokenRepository } from '../../domain/repositories/password-reset-token.repository';
@@ -32,6 +33,7 @@ export class ForgotPasswordUseCase implements ForgotPasswordPort {
     const tokenHash = await this.tokenHasher.hash(token);
 
     const resetToken = PasswordResetToken.create({
+      id: randomUUID(),
       tokenHash,
       userId: user.id,
       expiresAt: new Date(

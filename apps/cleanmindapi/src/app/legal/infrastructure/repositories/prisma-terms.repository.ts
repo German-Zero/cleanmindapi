@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
-import {
-  TermsRepository,
-  TermsVersionRecord,
-} from '../../domain/repositories/terms.repository';
+import { TermsRepository, TermsVersionRecord } from '../../domain/repositories/terms.repository';
 
 @Injectable()
 export class PrismaTermsRepository implements TermsRepository {

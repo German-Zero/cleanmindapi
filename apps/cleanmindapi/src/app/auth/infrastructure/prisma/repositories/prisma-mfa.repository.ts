@@ -35,7 +35,10 @@ export class PrismaMfaRepository implements MfaRepository {
     await this.prisma.$transaction([
       this.prisma.mfaRecoveryCode.deleteMany({ where: { authenticatorId } }),
       this.prisma.mfaRecoveryCode.createMany({
-        data: recoveryCodeHashes.map(codeHash => ({ authenticatorId, codeHash })),
+        data: recoveryCodeHashes.map((codeHash) => ({
+          authenticatorId,
+          codeHash,
+        })),
       }),
       this.prisma.mfaAuthenticator.update({
         where: { id: authenticatorId },
@@ -58,7 +61,10 @@ export class PrismaMfaRepository implements MfaRepository {
     await this.prisma.$transaction([
       this.prisma.mfaRecoveryCode.deleteMany({ where: { authenticatorId } }),
       this.prisma.mfaRecoveryCode.createMany({
-        data: recoveryCodeHashes.map(codeHash => ({ authenticatorId, codeHash })),
+        data: recoveryCodeHashes.map((codeHash) => ({
+          authenticatorId,
+          codeHash,
+        })),
       }),
     ]);
   }

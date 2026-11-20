@@ -1,9 +1,9 @@
-import { MotivationFrequency } from "../../domain/enums/motivation-frequency.enum";
+import { MotivationFrequency } from '../../domain/enums/motivation-frequency.enum';
 
 export class UpdateMotivationalPreferencesCommand {
   constructor(
     public readonly userId: string,
     public readonly motivationalMessages: boolean,
-    public readonly motivationFrequency: MotivationFrequency
+    public readonly motivationFrequency: MotivationFrequency,
   ) {}
 }

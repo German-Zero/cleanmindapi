@@ -1,6 +1,6 @@
-import { IsBoolean, IsDateString, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsDateString, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
-export class CraeteTaskRequest {
+export class CreateTaskRequest {
   @IsString()
   @MinLength(3)
   @MaxLength(100)

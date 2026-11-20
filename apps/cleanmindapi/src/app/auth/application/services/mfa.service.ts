@@ -1,44 +1,28 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
+import { ApplicationError } from '../../../shared/application/errors/application-error';
 
 import { User } from '../../../users/domain/entities/user.entity';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
-import {
-  AuthResponse,
-  MfaRequiredResponse,
-} from '../../api/response/auth-response';
+import { AuthResponse, MfaRequiredResponse } from '../common/responses/auth-response';
 import { MfaAuthenticatorRecord } from '../../domain/models/mfa.model';
 import { MfaRepository } from '../../domain/repositories/mfa.repository';
 import { RefreshTokenRepository } from '../../domain/repositories/refresh-token.repository';
-import { MfaSecretEncryptionService } from '../../infrastructure/services/mfa-secret-encryption.service';
-import { TotpService } from '../../infrastructure/services/totp.service';
+import { MfaSecretCipherPort } from '../ports/outbound/mfa-secret-cipher.port';
+import { TotpPort } from '../ports/outbound/totp.port';
 import { SessionIssuerService } from './session-issuer.service';
-
-export interface MfaSetupResponse {
-  secret: string;
-  otpauthUri: string;
-}
-
-export interface MfaStatusResponse {
-  enabled: boolean;
-  enabledAt: Date | null;
-}
+import { MfaPort } from '../ports/inbound/mfa.port';
+import { MfaSetupResponse, MfaStatusResponse } from '../common/responses/mfa-responses';
 
 @Injectable()
-export class MfaService {
+export class MfaService implements MfaPort {
   constructor(
     private readonly repository: MfaRepository,
     private readonly refreshTokens: RefreshTokenRepository,
     private readonly users: UserRepository,
-    private readonly totp: TotpService,
-    private readonly encryption: MfaSecretEncryptionService,
+    private readonly totp: TotpPort,
+    private readonly encryption: MfaSecretCipherPort,
     private readonly sessions: SessionIssuerService,
     private readonly config: ConfigService,
   ) {}
@@ -59,21 +43,27 @@ export class MfaService {
       600,
     );
 
-    if (
-      !authTime ||
-      Math.floor(Date.now() / 1000) - authTime > maxAuthAge
-    ) {
-      throw new UnauthorizedException('Vuelve a iniciar sesión para continuar.');
+    if (!authTime || Math.floor(Date.now() / 1000) - authTime > maxAuthAge) {
+      throw new ApplicationError(
+        'AUTH_UNAUTHORIZED',
+        'Vuelve a iniciar sesión para continuar.',
+      );
     }
 
     if (!user.emailVerified) {
-      throw new ForbiddenException('Debes verificar tu email antes de activar esta función.');
+      throw new ApplicationError(
+        'AUTH_FORBIDDEN',
+        'Debes verificar tu email antes de activar esta función.',
+      );
     }
 
     const current = await this.repository.findAuthenticator(userId);
 
     if (current?.enabledAt) {
-      throw new ConflictException('La verificación en dos pasos ya está activa.');
+      throw new ApplicationError(
+        'AUTH_CONFLICT',
+        'La verificación en dos pasos ya está activa.',
+      );
     }
 
     const secret = this.totp.generateSecret();
@@ -95,16 +85,13 @@ export class MfaService {
 
   async enable(userId: string, code: string): Promise<string[]> {
     const authenticator = await this.requirePendingAuthenticator(userId);
-
-    if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('El código ingresado no es válido.');
-    }
+    await this.requireValidAuthenticatorCode(authenticator, code);
 
     const recoveryCodes = this.generateRecoveryCodes();
 
     await this.repository.enableAuthenticator(
       authenticator.id,
-      recoveryCodes.map(recoveryCode => this.hashRecoveryCode(recoveryCode)),
+      recoveryCodes.map((recoveryCode) => this.hashRecoveryCode(recoveryCode)),
     );
     await this.refreshTokens.revokeAllByUser(userId);
 
@@ -113,27 +100,24 @@ export class MfaService {
 
   async disable(userId: string, code: string): Promise<void> {
     const authenticator = await this.requireEnabledAuthenticator(userId);
-
-    if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('El código ingresado no es válido.');
-    }
+    await this.requireValidAuthenticatorCode(authenticator, code);
 
     await this.repository.deleteAuthenticator(userId);
     await this.refreshTokens.revokeAllByUser(userId);
   }
 
-  async regenerateRecoveryCodes(userId: string, code: string): Promise<string[]> {
+  async regenerateRecoveryCodes(
+    userId: string,
+    code: string,
+  ): Promise<string[]> {
     const authenticator = await this.requireEnabledAuthenticator(userId);
-
-    if (!(await this.verifyAuthenticatorCode(authenticator, code))) {
-      throw new UnauthorizedException('El código ingresado no es válido.');
-    }
+    await this.requireValidAuthenticatorCode(authenticator, code);
 
     const recoveryCodes = this.generateRecoveryCodes();
 
     await this.repository.replaceRecoveryCodes(
       authenticator.id,
-      recoveryCodes.map(recoveryCode => this.hashRecoveryCode(recoveryCode)),
+      recoveryCodes.map((recoveryCode) => this.hashRecoveryCode(recoveryCode)),
     );
 
     return recoveryCodes;
@@ -163,7 +147,10 @@ export class MfaService {
     return { mfaRequired: true, challengeToken, expiresIn };
   }
 
-  async verifyLogin(challengeToken: string, code: string): Promise<AuthResponse> {
+  async verifyLogin(
+    challengeToken: string,
+    code: string,
+  ): Promise<AuthResponse> {
     const maxAttempts = this.config.get<number>('auth.mfa.maxAttempts', 5);
     const challenge = await this.repository.claimChallengeAttempt(
       this.hash(challengeToken),
@@ -171,24 +158,28 @@ export class MfaService {
     );
 
     if (!challenge) {
-      throw new UnauthorizedException('La verificación venció. Inicia sesión nuevamente.');
+      throw new ApplicationError(
+        'AUTH_UNAUTHORIZED',
+        'La verificación venció. Inicia sesión nuevamente.',
+      );
     }
 
-    const authenticator = await this.requireEnabledAuthenticator(challenge.userId);
-    const valid = await this.verifyAuthenticatorCode(authenticator, code);
-
-    if (!valid) {
-      throw new UnauthorizedException('El código ingresado no es válido.');
-    }
+    const authenticator = await this.requireEnabledAuthenticator(
+      challenge.userId,
+    );
+    await this.requireValidAuthenticatorCode(authenticator, code);
 
     if (!(await this.repository.consumeChallenge(challenge.id))) {
-      throw new UnauthorizedException('Este intento de verificación ya fue utilizado.');
+      throw new ApplicationError(
+        'AUTH_UNAUTHORIZED',
+        'Este intento de verificación ya fue utilizado.',
+      );
     }
 
-    return this.sessions.issue(
-      await this.requireUser(challenge.userId),
-      [challenge.primaryMethod, 'otp'],
-    );
+    return this.sessions.issue(await this.requireUser(challenge.userId), [
+      challenge.primaryMethod,
+      'otp',
+    ]);
   }
 
   private async verifyAuthenticatorCode(
@@ -201,7 +192,9 @@ export class MfaService {
       const secret = this.encryption.decrypt(authenticator.secretEncrypted);
       const step = this.totp.verify(normalized, secret);
 
-      return step !== null && this.repository.useTotpStep(authenticator.id, step);
+      return (
+        step !== null && this.repository.useTotpStep(authenticator.id, step)
+      );
     }
 
     if (/^CM-(?:[A-F0-9]{4}-){3}[A-F0-9]{4}$/.test(normalized)) {
@@ -214,10 +207,26 @@ export class MfaService {
     return false;
   }
 
+  private async requireValidAuthenticatorCode(
+    authenticator: MfaAuthenticatorRecord,
+    code: string,
+  ): Promise<void> {
+    if (await this.verifyAuthenticatorCode(authenticator, code)) return;
+
+    throw new ApplicationError(
+      'AUTH_UNAUTHORIZED',
+      'El código ingresado no es válido.',
+    );
+  }
+
   private async requireUser(userId: string): Promise<User> {
     const user = await this.users.findById(userId);
 
-    if (!user) throw new NotFoundException('No encontramos el usuario.');
+    if (!user)
+      throw new ApplicationError(
+        'AUTH_NOT_FOUND',
+        'No encontramos el usuario.',
+      );
 
     return user;
   }
@@ -228,7 +237,10 @@ export class MfaService {
     const authenticator = await this.repository.findAuthenticator(userId);
 
     if (!authenticator || authenticator.enabledAt) {
-      throw new ConflictException('Primero debes iniciar la configuración de la verificación en dos pasos.');
+      throw new ApplicationError(
+        'AUTH_CONFLICT',
+        'Primero debes iniciar la configuración de la verificación en dos pasos.',
+      );
     }
 
     return authenticator;
@@ -240,7 +252,10 @@ export class MfaService {
     const authenticator = await this.repository.findAuthenticator(userId);
 
     if (!authenticator?.enabledAt) {
-      throw new ConflictException('La verificación en dos pasos no está activa.');
+      throw new ApplicationError(
+        'AUTH_CONFLICT',
+        'La verificación en dos pasos no está activa.',
+      );
     }
 
     return authenticator;

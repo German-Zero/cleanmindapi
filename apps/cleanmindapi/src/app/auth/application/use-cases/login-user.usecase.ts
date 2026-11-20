@@ -4,7 +4,7 @@ import { Email } from '../../../users/domain/value-objects/email.vo';
 import { Password } from '../../../users/domain/value-objects/password.vo';
 import { InvalidCredentialsException } from '../../../users/domain/exceptions/invalid-credentials.exception';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
-import { LoginResponse } from '../../api/response/auth-response';
+import { LoginResponse } from '../common/responses/auth-response';
 import { LoginUserCommand } from '../commands/login-user.command';
 import { LoginUserPort } from '../ports/inbound/login-user.port';
 import { PasswordHasherPort } from '../ports/outbound/password-hasher.port';

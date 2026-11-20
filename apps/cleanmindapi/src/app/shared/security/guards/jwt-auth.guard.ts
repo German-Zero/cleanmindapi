@@ -1,28 +1,25 @@
-import { ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { AuthGuard } from '@nestjs/passport'
-import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { TERMS_OPTIONAL_KEY } from '../decorators/terms-optional.decorator';
-import { TermsService } from '../../../legal/application/terms.service';
+import { TermsPort } from '../../../legal/application/ports/inbound/terms.port';
 import { JwtPayload } from '../../../auth/application/common/jwt-payload';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(
     private readonly reflector: Reflector,
-    private readonly terms: TermsService,
+    private readonly terms: TermsPort,
   ) {
     super();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      IS_PUBLIC_KEY,
-      [
-        context.getHandler(),
-        context.getClass()
-      ],
-    );
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (isPublic) return true;
 

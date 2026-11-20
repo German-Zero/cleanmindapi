@@ -1,7 +1,7 @@
-import { ConflictException } from "@nestjs/common";
+import { DomainError } from '../../../shared/domain/errors/domain-error';
 
-export class EmailAlreadyExistsException extends ConflictException {
+export class EmailAlreadyExistsException extends DomainError {
   constructor() {
-    super('Ya existe una cuenta con este email.');
+    super('EMAIL_ALREADY_EXISTS', 'Ya existe una cuenta con este email.');
   }
 }

@@ -3,11 +3,13 @@ import { Task } from '../../../domain/entities/task.entity';
 import { TaskResponse } from '../responses/task.response';
 
 export class TaskResponseMapper {
-  static toResponse(
-    task: Task,
-  ): TaskResponse {
+  static toResponse(task: Task): TaskResponse {
+    if (!task.id || !task.createdAt || !task.updatedAt) {
+      throw new Error('Cannot map an unpersisted task response.');
+    }
+
     return {
-      id: task.id!,
+      id: task.id,
 
       title: task.title,
 
@@ -25,17 +27,13 @@ export class TaskResponseMapper {
 
       completedAt: task.completedAt,
 
-      createdAt: task.createdAt!,
+      createdAt: task.createdAt,
 
-      updatedAt: task.updatedAt!,
+      updatedAt: task.updatedAt,
     };
   }
 
-  static toResponseList(
-    tasks: Task[],
-  ): TaskResponse[] {
-    return tasks.map(task =>
-      this.toResponse(task),
-    );
+  static toResponseList(tasks: Task[]): TaskResponse[] {
+    return tasks.map((task) => this.toResponse(task));
   }
 }

@@ -4,10 +4,7 @@ import { User } from '../../../users/domain/entities/user.entity';
 import { UserCapacityReachedException } from '../../../users/domain/exceptions/user-capacity-reached.exception';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { Email } from '../../../users/domain/value-objects/email.vo';
-import {
-  BetaRegistrationException,
-  ClosedBetaRegistrationService,
-} from './closed-beta-registration.service';
+import { BetaRegistrationException, ClosedBetaRegistrationService } from './closed-beta-registration.service';
 
 describe('ClosedBetaRegistrationService', () => {
   const createService = (
@@ -35,8 +32,9 @@ describe('ClosedBetaRegistrationService', () => {
   it('rejects an email outside the allowlist', () => {
     const { service } = createService();
 
-    expect(() => service.assertEmailAllowed(new Email('other@example.com')))
-      .toThrow(BetaRegistrationException);
+    expect(() =>
+      service.assertEmailAllowed(new Email('other@example.com')),
+    ).toThrow(BetaRegistrationException);
   });
 
   it('reports remaining capacity without exposing the allowlist', async () => {
@@ -63,9 +61,9 @@ describe('ClosedBetaRegistrationService', () => {
       email: new Email('tester@example.com'),
     } as User;
     const { service } = createService({
-      createWithinLimit: jest.fn().mockRejectedValue(
-        new UserCapacityReachedException(20),
-      ),
+      createWithinLimit: jest
+        .fn()
+        .mockRejectedValue(new UserCapacityReachedException(20)),
     });
 
     await expect(service.create(user)).rejects.toMatchObject({

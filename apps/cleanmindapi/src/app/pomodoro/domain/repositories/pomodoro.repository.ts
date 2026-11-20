@@ -1,9 +1,4 @@
-import {
-  PomodoroBreakType,
-  PomodoroSession,
-  PomodoroSessionStatus,
-  PomodoroSettings,
-} from '../models/pomodoro.model';
+import { PomodoroBreakType, PomodoroSession, PomodoroSessionFinishUpdate, PomodoroSessionPauseUpdate, PomodoroSettings } from '../models/pomodoro.model';
 
 export type PomodoroSettingsUpdate = Omit<PomodoroSettings, 'userId'>;
 
@@ -15,48 +10,17 @@ export interface CreatePomodoroSessionData {
   plannedBreakSeconds: number;
 }
 
-export interface FinishPomodoroSessionData {
-  status: Exclude<PomodoroSessionStatus, PomodoroSessionStatus.ACTIVE>;
-  actualFocusSeconds: number;
-  actualBreakSeconds: number;
-  endedAt: Date;
-}
-
-export interface UpdatePomodoroPauseData {
-  pausedAt: Date | null;
-  accumulatedPausedSeconds: number;
-}
+export type FinishPomodoroSessionData = PomodoroSessionFinishUpdate;
+export type UpdatePomodoroPauseData = PomodoroSessionPauseUpdate;
 
 export abstract class PomodoroRepository {
   abstract findUserTimezone(userId: string): Promise<string>;
-  abstract findSettingsByUserId(
-    userId: string,
-  ): Promise<PomodoroSettings | null>;
-  abstract upsertSettings(
-    userId: string,
-    settings: PomodoroSettingsUpdate,
-  ): Promise<PomodoroSettings>;
+  abstract findSettingsByUserId( userId: string, ): Promise<PomodoroSettings | null>;
+  abstract upsertSettings( userId: string, settings: PomodoroSettingsUpdate, ): Promise<PomodoroSettings>;
   abstract findActiveByUserId(userId: string): Promise<PomodoroSession | null>;
-  abstract findSessionByIdAndUserId(
-    id: string,
-    userId: string,
-  ): Promise<PomodoroSession | null>;
-  abstract createSession(
-    data: CreatePomodoroSessionData,
-  ): Promise<PomodoroSession>;
-  abstract updateActiveSessionPause(
-    id: string,
-    userId: string,
-    data: UpdatePomodoroPauseData,
-  ): Promise<PomodoroSession | null>;
-  abstract finishActiveSession(
-    id: string,
-    userId: string,
-    data: FinishPomodoroSessionData,
-  ): Promise<PomodoroSession | null>;
-  abstract findEndedBetween(
-    userId: string,
-    from: Date,
-    to: Date,
-  ): Promise<PomodoroSession[]>;
+  abstract findSessionByIdAndUserId( id: string, userId: string, ): Promise<PomodoroSession | null>;
+  abstract createSession( data: CreatePomodoroSessionData, ): Promise<PomodoroSession>;
+  abstract updateActiveSessionPause( id: string, userId: string, data: UpdatePomodoroPauseData, ): Promise<PomodoroSession | null>;
+  abstract finishActiveSession( id: string, userId: string, data: FinishPomodoroSessionData, ): Promise<PomodoroSession | null>;
+  abstract findEndedBetween( userId: string, from: Date, to: Date, ): Promise<PomodoroSession[]>;
 }

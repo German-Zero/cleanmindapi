@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import { TotpPort } from '../../application/ports/outbound/totp.port';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 @Injectable()
-export class TotpService {
+export class TotpService extends TotpPort {
   generateSecret(size = 20): string {
     return this.encodeBase32(randomBytes(size));
   }

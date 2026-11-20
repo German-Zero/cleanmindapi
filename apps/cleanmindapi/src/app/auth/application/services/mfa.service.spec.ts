@@ -7,8 +7,8 @@ import { AuthProvider } from '../../../users/domain/enums/auth-provider.enum';
 import { UserRole } from '../../../users/domain/enums/user-role.enum';
 import { MfaRepository } from '../../domain/repositories/mfa.repository';
 import { RefreshTokenRepository } from '../../domain/repositories/refresh-token.repository';
-import { MfaSecretEncryptionService } from '../../infrastructure/services/mfa-secret-encryption.service';
-import { TotpService } from '../../infrastructure/services/totp.service';
+import { MfaSecretCipherPort } from '../ports/outbound/mfa-secret-cipher.port';
+import { TotpPort } from '../ports/outbound/totp.port';
 import { MfaService } from './mfa.service';
 import { SessionIssuerService } from './session-issuer.service';
 
@@ -34,14 +34,16 @@ describe('MfaService', () => {
     lastUsedStep: null,
   };
 
-  function createService(overrides: {
-    repository?: Partial<MfaRepository>;
-    users?: Partial<UserRepository>;
-    refreshTokens?: Partial<RefreshTokenRepository>;
-    totp?: Partial<TotpService>;
-    encryption?: Partial<MfaSecretEncryptionService>;
-    sessions?: Partial<SessionIssuerService>;
-  } = {}) {
+  function createService(
+    overrides: {
+      repository?: Partial<MfaRepository>;
+      users?: Partial<UserRepository>;
+      refreshTokens?: Partial<RefreshTokenRepository>;
+      totp?: Partial<TotpPort>;
+      encryption?: Partial<MfaSecretCipherPort>;
+      sessions?: Partial<SessionIssuerService>;
+    } = {},
+  ) {
     const repository = {
       findAuthenticator: jest.fn(),
       createChallenge: jest.fn(),
@@ -62,11 +64,11 @@ describe('MfaService', () => {
     const totp = {
       verify: jest.fn(),
       ...overrides.totp,
-    } as unknown as TotpService;
+    } as unknown as TotpPort;
     const encryption = {
       decrypt: jest.fn().mockReturnValue('BASE32SECRET'),
       ...overrides.encryption,
-    } as unknown as MfaSecretEncryptionService;
+    } as unknown as MfaSecretCipherPort;
     const sessions = {
       issue: jest.fn().mockResolvedValue({
         mfaRequired: false,
@@ -107,11 +109,13 @@ describe('MfaService', () => {
 
     const result = await service.beginLogin(user, 'pwd');
 
-    expect(result).toEqual(expect.objectContaining({
-      mfaRequired: true,
-      expiresIn: 300,
-      challengeToken: expect.any(String),
-    }));
+    expect(result).toEqual(
+      expect.objectContaining({
+        mfaRequired: true,
+        expiresIn: 300,
+        challengeToken: expect.any(String),
+      }),
+    );
     expect(repository.createChallenge).toHaveBeenCalledWith(
       user.id,
       expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -150,10 +154,7 @@ describe('MfaService', () => {
 
     const result = await service.verifyLogin('challenge-token', '123456');
 
-    expect(repository.useTotpStep).toHaveBeenCalledWith(
-      authenticator.id,
-      1234,
-    );
+    expect(repository.useTotpStep).toHaveBeenCalledWith(authenticator.id, 1234);
     expect(repository.consumeChallenge).toHaveBeenCalledWith('challenge-id');
     expect(sessions.issue).toHaveBeenCalledWith(user, ['pwd', 'otp']);
     expect(result.mfaRequired).toBe(false);

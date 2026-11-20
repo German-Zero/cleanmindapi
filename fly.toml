@@ -23,8 +23,8 @@ kill_timeout = "10s"
   MFA_ISSUER = "CleanMind"
   FRONTEND_URL = "https://cleanmind.vercel.app"
   CORS_ORIGINS = "https://cleanmind.vercel.app"
-  GOOGLE_CALLBACK_URL = "https://cleanmind.vercel.app/api/auth/google/callback"
-  DISCORD_REDIRECT_URI = "https://cleanmind.vercel.app/api/notifications/discord/callback"
+  GOOGLE_CALLBACK_URL = "https://cleanmind-api-germannaz.fly.dev/api/auth/google/callback"
+  DISCORD_REDIRECT_URI = "https://cleanmind-api-germannaz.fly.dev/api/notifications/discord/callback"
   DISCORD_OAUTH_SUCCESS_URL = "https://cleanmind.vercel.app/settings"
 
 [http_service]

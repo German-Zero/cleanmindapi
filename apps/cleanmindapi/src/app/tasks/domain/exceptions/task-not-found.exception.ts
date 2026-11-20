@@ -1,5 +1,7 @@
-export class TaskNotFoundException extends Error {
+import { DomainError } from '../../../shared/domain/errors/domain-error';
+
+export class TaskNotFoundException extends DomainError {
   constructor() {
-    super('Task Not Found.')
+    super('TASK_NOT_FOUND', 'Task Not Found.');
   }
 }

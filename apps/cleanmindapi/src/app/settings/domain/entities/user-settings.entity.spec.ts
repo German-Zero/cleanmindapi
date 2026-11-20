@@ -9,14 +9,9 @@ describe('UserSettings', () => {
     expect(settings.theme).toBe(Theme.LUNAR_MIND);
     expect(settings.backgroundMotion).toBe(BackgroundMotion.NONE);
 
-    settings.changeAppearance(
-      Theme.SOFT_DAWN,
-      BackgroundMotion.SOFT_AURORA,
-    );
+    settings.changeAppearance(Theme.SOFT_DAWN, BackgroundMotion.SOFT_AURORA);
 
     expect(settings.theme).toBe(Theme.SOFT_DAWN);
-    expect(settings.backgroundMotion).toBe(
-      BackgroundMotion.SOFT_AURORA,
-    );
+    expect(settings.backgroundMotion).toBe(BackgroundMotion.SOFT_AURORA);
   });
 });

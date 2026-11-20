@@ -1,7 +1,10 @@
-import { ForbiddenException } from "@nestjs/common";
+import { DomainError } from '../../../shared/domain/errors/domain-error';
 
-export class TaskAccessDeniedException extends ForbiddenException {
+export class TaskAccessDeniedException extends DomainError {
   constructor() {
-    super('You do not have permission to access this task.')
+    super(
+      'TASK_ACCESS_DENIED',
+      'You do not have permission to access this task.',
+    );
   }
 }

@@ -1,22 +1,19 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
+import { ApplicationError } from '../../../shared/application/errors/application-error';
 
 import { DiscordConnection } from '../../domain/models/discord-connection.model';
 import { DiscordConnectionRepository } from '../../domain/repositories/discord-connection.repository';
-import { DiscordApiService } from '../../infrastructure/discord/discord-api.service';
+import { DiscordApiPort } from '../ports/outbound/discord-api.port';
+import { DiscordConnectionPort } from '../ports/inbound/discord-connection.port';
 
 @Injectable()
-export class DiscordConnectionService {
+export class DiscordConnectionService implements DiscordConnectionPort {
   private readonly stateLifetimeMs = 10 * 60 * 1000;
 
   constructor(
     private readonly connections: DiscordConnectionRepository,
-    private readonly discord: DiscordApiService,
+    private readonly discord: DiscordApiPort,
   ) {}
 
   async createAuthorizationUrl(userId: string): Promise<string> {
@@ -31,18 +28,25 @@ export class DiscordConnectionService {
     return this.discord.createAuthorizationUrl(state);
   }
 
-  async completeConnection(code: string, state: string): Promise<DiscordConnection> {
+  async completeConnection(
+    code: string,
+    state: string,
+  ): Promise<DiscordConnection> {
     const userId = await this.connections.consumeOAuthState(this.hash(state));
 
     if (!userId) {
-      throw new UnauthorizedException('Discord OAuth state is invalid or expired');
+      throw new ApplicationError(
+        'DISCORD_UNAUTHORIZED',
+        'Discord OAuth state is invalid or expired',
+      );
     }
 
     const profile = await this.discord.getProfileFromCode(code);
     const existing = await this.connections.findByDiscordUserId(profile.id);
 
     if (existing && existing.userId !== userId) {
-      throw new ConflictException(
+      throw new ApplicationError(
+        'DISCORD_CONFLICT',
         'This Discord account is already connected to another CleanMind user',
       );
     }
@@ -62,7 +66,10 @@ export class DiscordConnectionService {
     const connection = await this.connections.findByUserId(userId);
 
     if (!connection) {
-      throw new NotFoundException('Discord account is not connected');
+      throw new ApplicationError(
+        'DISCORD_NOT_FOUND',
+        'Discord account is not connected',
+      );
     }
 
     await this.discord.sendDirectMessage(

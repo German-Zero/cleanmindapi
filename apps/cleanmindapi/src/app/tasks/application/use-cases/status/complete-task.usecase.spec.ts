@@ -32,6 +32,7 @@ describe('CompleteTaskUseCase', () => {
     });
 
   const user = User.createLocal({
+    id: userId,
     name: 'Ada Lovelace',
     email: new Email('ada@example.com'),
     passwordHash: 'hash',

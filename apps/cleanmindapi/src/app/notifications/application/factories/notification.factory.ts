@@ -1,26 +1,34 @@
-import { Injectable } from "@nestjs/common";
-import { Notification } from "../../domain/entities/notification.entity";
-import { NotificationType } from "../../domain/enums/notification-type.enum";
+import { Injectable } from '@nestjs/common';
+import { Notification } from '../../domain/entities/notification.entity';
+import { NotificationType } from '../../domain/enums/notification-type.enum';
 
 @Injectable()
 export class NotificationFactory {
-  buildTaskReminder( recipient: string, taskTitle: string, dueDate: Date ): Notification {
+  buildTaskReminder(
+    recipient: string,
+    taskTitle: string,
+    dueDate: Date,
+  ): Notification {
     return Notification.create({
       recipient,
-      payload: { taskTitle, dueDate},
+      payload: { taskTitle, dueDate },
       type: NotificationType.TASK_REMINDER,
     });
   }
 
-  buildTaskOverdue( recipient: string, taskTitle: string, dueDate: Date ): Notification {
+  buildTaskOverdue(
+    recipient: string,
+    taskTitle: string,
+    dueDate: Date,
+  ): Notification {
     return Notification.create({
       recipient,
-      payload: { taskTitle, dueDate},
+      payload: { taskTitle, dueDate },
       type: NotificationType.TASK_OVERDUE,
     });
   }
 
-  buildTaskCompleted( recipient: string, taskTitle: string ): Notification {
+  buildTaskCompleted(recipient: string, taskTitle: string): Notification {
     return Notification.create({
       recipient,
       payload: { taskTitle, completedAt: new Date() },
@@ -28,7 +36,7 @@ export class NotificationFactory {
     });
   }
 
-  buildMotivational( recipient: string, quote: string ): Notification {
+  buildMotivational(recipient: string, quote: string): Notification {
     return Notification.create({
       recipient,
       payload: { quote },
@@ -36,15 +44,15 @@ export class NotificationFactory {
     });
   }
 
-  buildVerifyEmail( recipient: string,verificationUrl: string ): Notification {
+  buildVerifyEmail(recipient: string, verificationUrl: string): Notification {
     return Notification.create({
       recipient,
-      payload: { verificationUrl, },
+      payload: { verificationUrl },
       type: NotificationType.VERIFY_EMAIL,
     });
   }
 
-  buildPasswordReset( recipient: string,resetUrl: string ): Notification {
+  buildPasswordReset(recipient: string, resetUrl: string): Notification {
     return Notification.create({
       recipient,
       payload: { resetUrl },

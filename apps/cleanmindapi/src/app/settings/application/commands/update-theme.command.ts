@@ -1,5 +1,5 @@
-import { Theme } from "../../domain/enums/theme.enum";
-import { BackgroundMotion } from "../../domain/enums/background-motion.enum";
+import { Theme } from '../../domain/enums/theme.enum';
+import { BackgroundMotion } from '../../domain/enums/background-motion.enum';
 
 export class UpdateThemeCommand {
   constructor(

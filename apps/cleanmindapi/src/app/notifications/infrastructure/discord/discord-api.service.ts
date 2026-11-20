@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 import { DiscordProfile } from '../../domain/models/discord-connection.model';
+import { DiscordApiPort } from '../../application/ports/outbound/discord-api.port';
 
 interface DiscordTokenResponse {
   access_token: string;
@@ -20,15 +21,21 @@ interface DiscordChannelResponse {
 }
 
 @Injectable()
-export class DiscordApiService {
+export class DiscordApiService extends DiscordApiPort {
   private readonly apiBaseUrl = 'https://discord.com/api/v10';
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {
+    super();
+  }
 
   createAuthorizationUrl(state: string): string {
     const params = new URLSearchParams({
-      client_id: this.config.getOrThrow<string>('notifications.discord.clientId'),
-      redirect_uri: this.config.getOrThrow<string>('notifications.discord.redirectUri'),
+      client_id: this.config.getOrThrow<string>(
+        'notifications.discord.clientId',
+      ),
+      redirect_uri: this.config.getOrThrow<string>(
+        'notifications.discord.redirectUri',
+      ),
       response_type: 'code',
       scope: 'identify',
       state,
@@ -42,11 +49,17 @@ export class DiscordApiService {
     const token = await axios.post<DiscordTokenResponse>(
       `${this.apiBaseUrl}/oauth2/token`,
       new URLSearchParams({
-        client_id: this.config.getOrThrow<string>('notifications.discord.clientId'),
-        client_secret: this.config.getOrThrow<string>('notifications.discord.clientSecret'),
+        client_id: this.config.getOrThrow<string>(
+          'notifications.discord.clientId',
+        ),
+        client_secret: this.config.getOrThrow<string>(
+          'notifications.discord.clientSecret',
+        ),
         grant_type: 'authorization_code',
         code,
-        redirect_uri: this.config.getOrThrow<string>('notifications.discord.redirectUri'),
+        redirect_uri: this.config.getOrThrow<string>(
+          'notifications.discord.redirectUri',
+        ),
       }),
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -70,10 +83,11 @@ export class DiscordApiService {
     };
   }
 
-  async sendDirectMessage(discordUserId: string, content: string): Promise<void> {
-    const authorization = `Bot ${this.config.getOrThrow<string>(
-      'notifications.discord.botToken',
-    )}`;
+  async sendDirectMessage(
+    discordUserId: string,
+    content: string,
+  ): Promise<void> {
+    const authorization = `Bot ${this.config.getOrThrow<string>('notifications.discord.botToken')}`;
     const headers = {
       Authorization: authorization,
       'Content-Type': 'application/json',

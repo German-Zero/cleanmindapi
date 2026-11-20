@@ -1,22 +1,17 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { PassportStrategy } from "@nestjs/passport";
-import { Strategy, VerifyCallback, Profile } from "passport-google-oauth20";
-import { GoogleUser } from "../../application/common/google-user";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
+import { GoogleUser } from '../../application/common/google-user';
 
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(
-  Strategy,
-  'google',
-) {
-  constructor(
-    private readonly config: ConfigService,
-  ) {
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  constructor(private readonly config: ConfigService) {
     super({
-      clientID: config.get<string>('auth.google.clientId')!,
-      clientSecret: config.get<string>('auth.google.clientSecret')!,
-      callbackURL: config.get<string>('auth.google.callbackUrl')!,
-      scope: ['email', 'profile']
+      clientID: config.getOrThrow<string>('auth.google.clientId'),
+      clientSecret: config.getOrThrow<string>('auth.google.clientSecret'),
+      callbackURL: config.getOrThrow<string>('auth.google.callbackUrl'),
+      scope: ['email', 'profile'],
     });
   }
 

@@ -1,5 +1,5 @@
-import { SetPasswordCommand } from "../../commands/set-password.command";
+import { SetPasswordCommand } from '../../commands/set-password.command';
 
 export abstract class SetPasswordPort {
-  abstract execute(command: SetPasswordCommand): Promise<void>
+  abstract execute(command: SetPasswordCommand): Promise<void>;
 }

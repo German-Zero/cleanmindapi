@@ -1,4 +1,3 @@
-
 import { NotificationFrequency } from '../enums/notification-frequency.enum';
 import { MotivationFrequency } from '../enums/motivation-frequency.enum';
 import { Theme } from '../enums/theme.enum';
@@ -27,62 +26,34 @@ interface UserSettingsProps {
 
 export class UserSettings {
   private readonly _id?: string;
-
   private readonly _userId: string;
-
   private _theme: Theme;
   private _backgroundMotion: BackgroundMotion;
-
   private _emailNotifications: boolean;
   private _whatsappNotifications: boolean;
   private _discordNotifications: boolean;
-
   private _taskNotificationFrequency: NotificationFrequency;
-
   private _motivationalMessages: boolean;
   private _motivationFrequency: MotivationFrequency;
-
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
-  private constructor(
-    props: UserSettingsProps,
-  ) {
+  private constructor(props: UserSettingsProps) {
     this._id = props.id;
-
     this._userId = props.userId;
-
     this._theme = props.theme;
     this._backgroundMotion = props.backgroundMotion;
-
-    this._emailNotifications =
-      props.emailNotifications;
-
-    this._whatsappNotifications =
-      props.whatsappNotifications;
-
-    this._discordNotifications =
-      props.discordNotifications;
-
-    this._taskNotificationFrequency =
-      props.taskNotificationFrequency;
-
-    this._motivationalMessages =
-      props.motivationalMessages;
-
-    this._motivationFrequency =
-      props.motivationFrequency;
-
-    this._createdAt =
-      props.createdAt ?? new Date();
-
-    this._updatedAt =
-      props.updatedAt ?? new Date();
+    this._emailNotifications = props.emailNotifications;
+    this._whatsappNotifications = props.whatsappNotifications;
+    this._discordNotifications = props.discordNotifications;
+    this._taskNotificationFrequency = props.taskNotificationFrequency;
+    this._motivationalMessages = props.motivationalMessages;
+    this._motivationFrequency = props.motivationFrequency;
+    this._createdAt = props.createdAt ?? new Date();
+    this._updatedAt = props.updatedAt ?? new Date();
   }
 
-  static createDefault(
-    userId: string,
-  ): UserSettings {
+  static createDefault(userId: string): UserSettings {
     return new UserSettings({
       userId,
 
@@ -93,18 +64,14 @@ export class UserSettings {
       whatsappNotifications: false,
       discordNotifications: false,
 
-      taskNotificationFrequency:
-        NotificationFrequency.DAILY,
+      taskNotificationFrequency: NotificationFrequency.DAILY,
 
       motivationalMessages: true,
-      motivationFrequency:
-        MotivationFrequency.DAILY,
+      motivationFrequency: MotivationFrequency.DAILY,
     });
   }
 
-  static restore(
-    props: UserSettingsProps,
-  ): UserSettings {
+  static restore(props: UserSettingsProps): UserSettings {
     return new UserSettings(props);
   }
 
@@ -130,9 +97,7 @@ export class UserSettings {
     this.touch();
   }
 
-  changeTaskNotificationFrequency(
-    frequency: NotificationFrequency,
-  ): void {
+  changeTaskNotificationFrequency(frequency: NotificationFrequency): void {
     this._taskNotificationFrequency = frequency;
 
     this.touch();

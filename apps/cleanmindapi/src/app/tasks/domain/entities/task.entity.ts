@@ -27,23 +27,20 @@ export class Task {
   ) {}
 
   static create(props: CreateTaskProps): Task {
-      return new Task(
-          null,
-          props.userId,
-          props.title,
-          props.description ?? null,
-          props.isImportant,
-          props.isUrgent,
-          this.calculateQuadrant(
-              props.isImportant,
-              props.isUrgent,
-          ),
-          TaskStatus.TODO,
-          props.dueDate ?? null,
-          null,
-          null,
-          null,
-      );
+    return new Task(
+      null,
+      props.userId,
+      props.title,
+      props.description ?? null,
+      props.isImportant,
+      props.isUrgent,
+      this.calculateQuadrant(props.isImportant, props.isUrgent),
+      TaskStatus.TODO,
+      props.dueDate ?? null,
+      null,
+      null,
+      null,
+    );
   }
 
   static restore(props: {
@@ -83,14 +80,10 @@ export class Task {
     isUrgent: boolean;
     dueDate?: Date | null;
   }): void {
-
     this._title = data.title;
     this._description = data.description ?? null;
 
-    this.updateQuadrant(
-        data.isImportant,
-        data.isUrgent,
-    );
+    this.updateQuadrant(data.isImportant, data.isUrgent);
 
     this._dueDate = data.dueDate ?? null;
   }
@@ -115,25 +108,17 @@ export class Task {
     this._completedAt = null;
   }
 
-  private updateQuadrant(
-    important: boolean,
-    urgent: boolean,
-  ): void {
-      this._isImportant = important;
-      this._isUrgent = urgent;
+  private updateQuadrant(important: boolean, urgent: boolean): void {
+    this._isImportant = important;
+    this._isUrgent = urgent;
 
-      this._quadrant = Task.calculateQuadrant(
-          important,
-          urgent,
-      );
+    this._quadrant = Task.calculateQuadrant(important, urgent);
   }
-
 
   private static calculateQuadrant(
     important: boolean,
     urgent: boolean,
   ): TaskQuadrant {
-
     if (important && urgent) {
       return TaskQuadrant.DO;
     }
@@ -182,7 +167,7 @@ export class Task {
   }
 
   get id(): string | null {
-  return this._id;
+    return this._id;
   }
 
   get userId(): string {
@@ -190,11 +175,10 @@ export class Task {
   }
 
   get createdAt(): Date | null {
-  return this._createdAt;
-}
+    return this._createdAt;
+  }
 
   get updatedAt(): Date | null {
     return this._updatedAt;
   }
-
 }

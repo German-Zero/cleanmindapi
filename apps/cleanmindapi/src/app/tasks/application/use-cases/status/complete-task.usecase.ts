@@ -1,13 +1,13 @@
-import { Injectable } from "@nestjs/common";
-import { CompleteTaskPort } from "../../ports/inbound/complete-task.port";
-import { TaskActionCommand } from "../../commands/task-action.command";
-import { TaskResponse } from "../../common/responses/task.response";
-import { TaskOwnerService } from "../../services/task-owner.service";
-import { TaskPersistenceService } from "../../services/task-persistence.service";
-import { TaskStatus } from "../../../domain/enums/task-status.enum";
-import { UserRepository } from "../../../../users/domain/repositories/user.repository";
-import { NotificationFactory } from "../../../../notifications/application/factories/notification.factory";
-import { NotificationDispatcherService } from "../../../../notifications/application/services/notification-dispatcher.service";
+import { Injectable } from '@nestjs/common';
+import { CompleteTaskPort } from '../../ports/inbound/complete-task.port';
+import { TaskActionCommand } from '../../commands/task-action.command';
+import { TaskResponse } from '../../common/responses/task.response';
+import { TaskOwnerService } from '../../services/task-owner.service';
+import { TaskPersistenceService } from '../../services/task-persistence.service';
+import { TaskStatus } from '../../../domain/enums/task-status.enum';
+import { UserRepository } from '../../../../users/domain/repositories/user.repository';
+import { NotificationFactory } from '../../../../notifications/application/factories/notification.factory';
+import { NotificationDispatcherService } from '../../../../notifications/application/services/notification-dispatcher.service';
 
 @Injectable()
 export class CompleteTaskUseCase implements CompleteTaskPort {
@@ -20,7 +20,10 @@ export class CompleteTaskUseCase implements CompleteTaskPort {
   ) {}
 
   async execute(command: TaskActionCommand): Promise<TaskResponse> {
-    const task = await this.taskOwnerService.getOwnedTask( command.taskId, command.userId );
+    const task = await this.taskOwnerService.getOwnedTask(
+      command.taskId,
+      command.userId,
+    );
     const wasCompleted = task.status === TaskStatus.COMPLETED;
 
     task.complete();

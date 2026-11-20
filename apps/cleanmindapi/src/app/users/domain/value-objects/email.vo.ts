@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { InvalidEmailException } from '../exceptions/invalid-email.exception';
 
 export class Email {
   private readonly value: string;
@@ -7,21 +7,21 @@ export class Email {
     const normalized = email.trim().toLowerCase();
 
     if (!Email.isValid(normalized)) {
-      throw new BadRequestException('Ingresa un email válido.');
+      throw new InvalidEmailException();
     }
 
-    this.value = normalized
+    this.value = normalized;
   }
 
   getValue(): string {
-    return this.value
+    return this.value;
   }
 
   equals(other: Email): boolean {
-    return this.value === other.value
+    return this.value === other.value;
   }
 
   private static isValid(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 }

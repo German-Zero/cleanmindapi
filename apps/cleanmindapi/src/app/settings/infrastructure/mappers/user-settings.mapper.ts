@@ -1,11 +1,4 @@
-import {
-  Prisma,
-  UserSettings as PrismaUserSettings,
-  Theme as PrismaTheme,
-  BackgroundMotion as PrismaBackgroundMotion,
-  NotificationFrequency as PrismaNotificationFrequency,
-  MotivationFrequency as PrismaMotivationFrequency,
-} from '@prisma/client'
+import { Prisma, UserSettings as PrismaUserSettings, Theme as PrismaTheme, BackgroundMotion as PrismaBackgroundMotion, NotificationFrequency as PrismaNotificationFrequency, MotivationFrequency as PrismaMotivationFrequency } from '@prisma/client';
 
 import { UserSettings } from '../../domain/entities/user-settings.entity';
 import { Theme } from '../../domain/enums/theme.enum';
@@ -14,35 +7,19 @@ import { NotificationFrequency } from '../../domain/enums/notification-frequency
 import { MotivationFrequency } from '../../domain/enums/motivation-frequency.enum';
 
 export class UserSettingsMapper {
-  static toDomain(
-    settings: PrismaUserSettings,
-  ): UserSettings {
+  static toDomain(settings: PrismaUserSettings): UserSettings {
     return UserSettings.restore({
       id: settings.id,
       userId: settings.userId,
-
       theme: settings.theme as Theme,
-
       backgroundMotion: settings.backgroundMotion as BackgroundMotion,
-
-      emailNotifications:
-        settings.emailNotifications,
-
-      whatsappNotifications:
-        settings.whatsappNotifications,
-
-      discordNotifications:
-        settings.discordNotifications,
-
+      emailNotifications: settings.emailNotifications,
+      whatsappNotifications: settings.whatsappNotifications,
+      discordNotifications: settings.discordNotifications,
       taskNotificationFrequency:
         settings.taskNotificationFrequency as NotificationFrequency,
-
-      motivationalMessages:
-        settings.motivationalMessages,
-
-      motivationFrequency:
-        settings.motivationFrequency as MotivationFrequency,
-
+      motivationalMessages: settings.motivationalMessages,
+      motivationFrequency: settings.motivationFrequency as MotivationFrequency,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     });
@@ -53,31 +30,16 @@ export class UserSettingsMapper {
   ): Prisma.UserSettingsUncheckedCreateInput {
     return {
       userId: settings.userId,
-
-      theme:
-        settings.theme as PrismaTheme,
-
-      backgroundMotion:
-        settings.backgroundMotion as PrismaBackgroundMotion,
-
-      emailNotifications:
-        settings.emailNotifications,
-
-      whatsappNotifications:
-        settings.whatsappNotifications,
-
-      discordNotifications:
-        settings.discordNotifications,
-
+      theme: settings.theme as PrismaTheme,
+      backgroundMotion: settings.backgroundMotion as PrismaBackgroundMotion,
+      emailNotifications: settings.emailNotifications,
+      whatsappNotifications: settings.whatsappNotifications,
+      discordNotifications: settings.discordNotifications,
       taskNotificationFrequency:
         settings.taskNotificationFrequency as PrismaNotificationFrequency,
-
-      motivationalMessages:
-        settings.motivationalMessages,
-
+      motivationalMessages: settings.motivationalMessages,
       motivationFrequency:
         settings.motivationFrequency as PrismaMotivationFrequency,
-
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
@@ -87,30 +49,16 @@ export class UserSettingsMapper {
     settings: UserSettings,
   ): Prisma.UserSettingsUncheckedUpdateInput {
     return {
-      theme:
-        settings.theme as PrismaTheme,
-
-      backgroundMotion:
-        settings.backgroundMotion as PrismaBackgroundMotion,
-
-      emailNotifications:
-        settings.emailNotifications,
-
-      whatsappNotifications:
-        settings.whatsappNotifications,
-
-      discordNotifications:
-        settings.discordNotifications,
-
+      theme: settings.theme as PrismaTheme,
+      backgroundMotion: settings.backgroundMotion as PrismaBackgroundMotion,
+      emailNotifications: settings.emailNotifications,
+      whatsappNotifications: settings.whatsappNotifications,
+      discordNotifications: settings.discordNotifications,
       taskNotificationFrequency:
         settings.taskNotificationFrequency as PrismaNotificationFrequency,
-
-      motivationalMessages:
-        settings.motivationalMessages,
-
+      motivationalMessages: settings.motivationalMessages,
       motivationFrequency:
         settings.motivationFrequency as PrismaMotivationFrequency,
-
       updatedAt: settings.updatedAt,
     };
   }

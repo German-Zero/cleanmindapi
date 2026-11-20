@@ -19,9 +19,7 @@ export class BrevoMailService {
 
   constructor(config: ConfigService) {
     this.apiKey = config.getOrThrow<string>('auth.mail.apiKey');
-    this.endpoint = `${config
-      .getOrThrow<string>('auth.mail.apiUrl')
-      .replace(/\/$/, '')}/smtp/email`;
+    this.endpoint = `${config.getOrThrow<string>('auth.mail.apiUrl').replace(/\/$/, '')}/smtp/email`;
     this.timeoutMs = config.getOrThrow<number>('auth.mail.timeoutMs');
     this.sender = {
       email: config.getOrThrow<string>('auth.mail.from'),
@@ -63,9 +61,7 @@ export class BrevoMailService {
     if (!response.ok) {
       const detail = (await response.text()).trim().slice(0, 300);
       throw new Error(
-        `Brevo rechazó el correo (${response.status})${
-          detail ? `: ${detail}` : ''
-        }`,
+        `Brevo rechazó el correo (${response.status})${detail ? `: ${detail}` : ''}`,
       );
     }
   }

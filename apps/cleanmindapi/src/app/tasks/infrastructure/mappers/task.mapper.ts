@@ -1,4 +1,4 @@
-import {Prisma, Task as PrismaTask, } from '@prisma/client';
+import { Prisma, Task as PrismaTask } from '@prisma/client';
 
 import { Task } from '../../domain/entities/task.entity';
 import { TaskQuadrant } from '../../domain/enums/task-quadrant.enum';
@@ -22,9 +22,7 @@ export class TaskMapper {
     });
   }
 
-  static toCreatePersistence(
-    task: Task,
-  ): Prisma.TaskUncheckedCreateInput {
+  static toCreatePersistence(task: Task): Prisma.TaskUncheckedCreateInput {
     return {
       userId: task.userId,
       title: task.title,
@@ -38,9 +36,7 @@ export class TaskMapper {
     };
   }
 
-  static toUpdatePersistence(
-    task: Task,
-  ): Prisma.TaskUncheckedUpdateInput {
+  static toUpdatePersistence(task: Task): Prisma.TaskUncheckedUpdateInput {
     return {
       title: task.title,
       description: task.description,

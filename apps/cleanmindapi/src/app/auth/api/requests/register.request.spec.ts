@@ -13,16 +13,16 @@ describe('RegisterRequest', () => {
   it('rechaza el registro sin aceptar los términos', async () => {
     const errors = await validate(request(false));
 
-    expect(
-      errors.some((error) => error.property === 'acceptedTerms'),
-    ).toBe(true);
+    expect(errors.some((error) => error.property === 'acceptedTerms')).toBe(
+      true,
+    );
   });
 
   it('acepta el consentimiento explícito', async () => {
     const errors = await validate(request(true));
 
-    expect(
-      errors.some((error) => error.property === 'acceptedTerms'),
-    ).toBe(false);
+    expect(errors.some((error) => error.property === 'acceptedTerms')).toBe(
+      false,
+    );
   });
 });

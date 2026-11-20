@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import { PasswordHasherPort } from "../../application/ports/outbound/password-hasher.port";
-import { Password } from "../../../users/domain/value-objects/password.vo";
+import { Injectable } from '@nestjs/common';
+import { PasswordHasherPort } from '../../application/ports/outbound/password-hasher.port';
+import { Password } from '../../../users/domain/value-objects/password.vo';
 
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class BcryptPasswordHasherService implements PasswordHasherPort {
@@ -13,6 +13,6 @@ export class BcryptPasswordHasherService implements PasswordHasherPort {
   }
 
   async compare(password: Password, hash: string): Promise<boolean> {
-    return bcrypt.compare(password.getValue(), hash)
+    return bcrypt.compare(password.getValue(), hash);
   }
 }

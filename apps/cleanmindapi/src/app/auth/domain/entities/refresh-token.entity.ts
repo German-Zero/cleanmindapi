@@ -59,10 +59,7 @@ export class RefreshToken {
     return !this.isRevoked() && !this.isExpired();
   }
 
-  rotate(
-    tokenHash: string,
-    expiresAt: Date,
-  ): RefreshToken {
+  rotate(tokenHash: string, expiresAt: Date): RefreshToken {
     this.revoke();
 
     return RefreshToken.create({

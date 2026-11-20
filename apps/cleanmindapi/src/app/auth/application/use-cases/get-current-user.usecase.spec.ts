@@ -7,9 +7,7 @@ describe('GetCurrentUserUseCase', () => {
   const users = {
     findById: jest.fn(),
   };
-  const useCase = new GetCurrentUserUseCase(
-    users as unknown as UserRepository,
-  );
+  const useCase = new GetCurrentUserUseCase(users as unknown as UserRepository);
 
   beforeEach(() => {
     users.findById.mockReset();

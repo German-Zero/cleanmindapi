@@ -1,5 +1,5 @@
 import { DiscordConnectionRepository } from '../../domain/repositories/discord-connection.repository';
-import { DiscordApiService } from '../../infrastructure/discord/discord-api.service';
+import { DiscordApiPort } from '../ports/outbound/discord-api.port';
 import { DiscordConnectionService } from './discord-connection.service';
 
 describe('DiscordConnectionService', () => {
@@ -8,10 +8,13 @@ describe('DiscordConnectionService', () => {
       createOAuthState: jest.fn().mockResolvedValue(undefined),
     } as unknown as DiscordConnectionRepository;
     const discord = {
-      createAuthorizationUrl: jest.fn().mockImplementation(
-        (state: string) => `https://discord.com/oauth2/authorize?state=${state}`,
-      ),
-    } as unknown as DiscordApiService;
+      createAuthorizationUrl: jest
+        .fn()
+        .mockImplementation(
+          (state: string) =>
+            `https://discord.com/oauth2/authorize?state=${state}`,
+        ),
+    } as unknown as DiscordApiPort;
     const service = new DiscordConnectionService(connections, discord);
 
     const url = await service.createAuthorizationUrl('cleanmind-user');
@@ -30,7 +33,7 @@ describe('DiscordConnectionService', () => {
     } as unknown as DiscordConnectionRepository;
     const discord = {
       getProfileFromCode: jest.fn(),
-    } as unknown as DiscordApiService;
+    } as unknown as DiscordApiPort;
     const service = new DiscordConnectionService(connections, discord);
 
     await expect(service.completeConnection('code', 'state')).rejects.toThrow(
@@ -54,7 +57,7 @@ describe('DiscordConnectionService', () => {
         globalName: null,
         avatarHash: null,
       }),
-    } as unknown as DiscordApiService;
+    } as unknown as DiscordApiPort;
     const service = new DiscordConnectionService(connections, discord);
 
     await expect(service.completeConnection('code', 'state')).rejects.toThrow(
@@ -67,15 +70,11 @@ describe('DiscordConnectionService', () => {
     const connections = {
       deleteByUserId: jest.fn().mockResolvedValue(undefined),
     } as unknown as DiscordConnectionRepository;
-    const discord = {} as DiscordApiService;
+    const discord = {} as DiscordApiPort;
     const service = new DiscordConnectionService(connections, discord);
 
-    await expect(
-      service.disconnect('cleanmind-user'),
-    ).resolves.toBeUndefined();
+    await expect(service.disconnect('cleanmind-user')).resolves.toBeUndefined();
 
-    expect(connections.deleteByUserId).toHaveBeenCalledWith(
-      'cleanmind-user',
-    );
+    expect(connections.deleteByUserId).toHaveBeenCalledWith('cleanmind-user');
   });
 });

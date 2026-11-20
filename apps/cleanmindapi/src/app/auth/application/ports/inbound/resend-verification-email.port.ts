@@ -1,7 +1,5 @@
-import { ResendVerificationEmailCommand } from "../../commands/resend-verification-email.command";
+import { ResendVerificationEmailCommand } from '../../commands/resend-verification-email.command';
 
 export abstract class ResendVerificationEmailPort {
-  abstract execute(
-    command: ResendVerificationEmailCommand,
-  ): Promise<void>;
+  abstract execute(command: ResendVerificationEmailCommand): Promise<void>;
 }

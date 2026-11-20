@@ -64,7 +64,9 @@ export class DiscordServerWebhookService {
     );
 
     if (url.protocol !== 'https:' || !isDiscordHost || !isWebhookPath) {
-      throw new Error('DISCORD_WEBHOOK_URL must be an HTTPS Discord webhook URL');
+      throw new Error(
+        'DISCORD_WEBHOOK_URL must be an HTTPS Discord webhook URL',
+      );
     }
   }
 }

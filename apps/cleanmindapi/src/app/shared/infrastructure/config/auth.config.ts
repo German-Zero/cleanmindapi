@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+import { requiredEnv } from './required-env';
 
 function getBetaCapacity(): number {
   const requestedCapacity = Number(process.env.BETA_MAX_USERS ?? 20);
@@ -8,8 +9,8 @@ function getBetaCapacity(): number {
 }
 
 export default registerAs('auth', () => ({
-  accessSecret: process.env.JWT_ACCESS_SECRET!,
-  refreshSecret: process.env.JWT_REFRESH_SECRET!,
+  accessSecret: requiredEnv('JWT_ACCESS_SECRET'),
+  refreshSecret: requiredEnv('JWT_REFRESH_SECRET'),
   accessTokenExpiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES ?? '15m',
   refreshTokenExpiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES ?? '7d',
 
@@ -24,16 +25,16 @@ export default registerAs('auth', () => ({
   },
 
   google: {
-    clientId: process.env.GOOGLE_CLIENT_ID!,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    callbackUrl: process.env.GOOGLE_CALLBACK_URL!,
+    clientId: requiredEnv('GOOGLE_CLIENT_ID'),
+    clientSecret: requiredEnv('GOOGLE_CLIENT_SECRET'),
+    callbackUrl: requiredEnv('GOOGLE_CALLBACK_URL'),
   },
 
   mail: {
-    apiKey: process.env.BREVO_API_KEY!,
+    apiKey: requiredEnv('BREVO_API_KEY'),
     apiUrl: process.env.BREVO_API_URL || 'https://api.brevo.com/v3',
     timeoutMs: Number(process.env.BREVO_TIMEOUT_MS ?? 10_000),
-    from: process.env.MAIL_FROM!,
+    from: requiredEnv('MAIL_FROM'),
     fromName: process.env.MAIL_FROM_NAME ?? process.env.APP_NAME ?? 'CleanMind',
     appName: process.env.APP_NAME,
     supportEmail: process.env.SUPPORT_EMAIL,
@@ -53,6 +54,6 @@ export default registerAs('auth', () => ({
   },
 
   frontend: {
-    url: process.env.FRONTEND_URL!,
+    url: requiredEnv('FRONTEND_URL'),
   },
 }));

@@ -46,17 +46,20 @@ describe('NotificationTemplateService', () => {
     ),
   ];
 
-  it.each(notifications.slice(1))('renders every configured channel for $type', (notification) => {
-    const email = service.renderEmail(notification);
-    const whatsapp = service.renderWhatsapp(notification);
-    const discord = service.renderDiscord(notification);
+  it.each(notifications.slice(1))(
+    'renders every configured channel for $type',
+    (notification) => {
+      const email = service.renderEmail(notification);
+      const whatsapp = service.renderWhatsapp(notification);
+      const discord = service.renderDiscord(notification);
 
-    expect(email).toContain('<html');
-    expect(email).toContain('CleanMind');
-    expect(whatsapp.length).toBeGreaterThan(20);
-    expect(discord.length).toBeGreaterThan(20);
-    expect(email + whatsapp + discord).not.toContain('{{');
-  });
+      expect(email).toContain('<html');
+      expect(email).toContain('CleanMind');
+      expect(whatsapp.length).toBeGreaterThan(20);
+      expect(discord.length).toBeGreaterThan(20);
+      expect(email + whatsapp + discord).not.toContain('{{');
+    },
+  );
 
   it('shows the real fifteen-minute expiration for verification and password reset', () => {
     const verificationEmail = service.renderEmail(notifications[0]);

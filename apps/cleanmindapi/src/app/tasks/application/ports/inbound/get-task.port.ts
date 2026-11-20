@@ -1,6 +1,6 @@
-import { GetTaskCommand } from "../../commands/get-task.command";
-import { TaskResponse } from "../../common/responses/task.response";
+import { GetTaskQuery } from '../../queries/get-task.query';
+import { TaskResponse } from '../../common/responses/task.response';
 
 export abstract class GetTaskPort {
-  abstract execute(command: GetTaskCommand): Promise<TaskResponse>
+  abstract execute(query: GetTaskQuery): Promise<TaskResponse>;
 }

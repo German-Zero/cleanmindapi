@@ -4,10 +4,7 @@ import { HandlebarsService } from '../../../shared/mail/helpers/handlebars.servi
 import { MAIL_TEMPLATE_BY_NOTIFICATION_TYPE } from '../../../shared/mail/helpers/template.map';
 import { Notification } from '../../domain/entities/notification.entity';
 import { NotificationType } from '../../domain/enums/notification-type.enum';
-import {
-  EMAIL_VERIFICATION_EXPIRATION_MINUTES,
-  PASSWORD_RESET_EXPIRATION_MINUTES,
-} from '../../../shared/application/auth-token-expiration.constants';
+import { EMAIL_VERIFICATION_EXPIRATION_MINUTES, PASSWORD_RESET_EXPIRATION_MINUTES } from '../../../shared/application/auth-token-expiration.constants';
 
 const SUBJECTS: Record<NotificationType, string> = {
   [NotificationType.VERIFY_EMAIL]: 'Confirma tu correo en CleanMind',
@@ -55,7 +52,9 @@ export class NotificationTemplateService {
 
   private ensureChannelSupports(type: NotificationType): void {
     if (type === NotificationType.VERIFY_EMAIL) {
-      throw new Error('La verificación de email solo puede enviarse por email.');
+      throw new Error(
+        'La verificación de email solo puede enviarse por email.',
+      );
     }
   }
 

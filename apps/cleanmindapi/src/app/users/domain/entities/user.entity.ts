@@ -1,29 +1,91 @@
-import { randomUUID } from "crypto";
-import { AuthProvider } from "../enums/auth-provider.enum";
-import { UserRole } from "../enums/user-role.enum";
-import { Email } from "../value-objects/email.vo";
+import { AuthProvider } from '../enums/auth-provider.enum';
+import { UserRole } from '../enums/user-role.enum';
+import { Email } from '../value-objects/email.vo';
 
 export class User {
+  private _name: string;
+  private _email: Email;
+  private _passwordHash: string | null;
+  private _provider: AuthProvider;
+  private _role: UserRole;
+  private _emailVerified: boolean;
+  private _avatarUrl: string | null;
+  private _updatedAt: Date;
+  private _lastLoginAt: Date | null;
+  private _onboardingCompletedAt: Date | null;
+
   constructor(
     public readonly id: string,
-    public name: string,
-    public email: Email,
-    public passwordHash: string | null,
-    public provider: AuthProvider,
-    public role: UserRole,
-    public emailVerified: boolean,
-    public avatarUrl: string | null,
-    public createdAt: Date,
-    public updatedAt: Date,
-    public lastLoginAt: Date | null,
-    public onboardingCompletedAt: Date | null = null,
-  ) {}
+    name: string,
+    email: Email,
+    passwordHash: string | null,
+    provider: AuthProvider,
+    role: UserRole,
+    emailVerified: boolean,
+    avatarUrl: string | null,
+    public readonly createdAt: Date,
+    updatedAt: Date,
+    lastLoginAt: Date | null,
+    onboardingCompletedAt: Date | null = null,
+  ) {
+    this._name = name;
+    this._email = email;
+    this._passwordHash = passwordHash;
+    this._provider = provider;
+    this._role = role;
+    this._emailVerified = emailVerified;
+    this._avatarUrl = avatarUrl;
+    this._updatedAt = updatedAt;
+    this._lastLoginAt = lastLoginAt;
+    this._onboardingCompletedAt = onboardingCompletedAt;
+  }
+
+  get name(): string {
+    return this._name;
+  }
+
+  get email(): Email {
+    return this._email;
+  }
+
+  get passwordHash(): string | null {
+    return this._passwordHash;
+  }
+
+  get provider(): AuthProvider {
+    return this._provider;
+  }
+
+  get role(): UserRole {
+    return this._role;
+  }
+
+  get emailVerified(): boolean {
+    return this._emailVerified;
+  }
+
+  get avatarUrl(): string | null {
+    return this._avatarUrl;
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
+
+  get lastLoginAt(): Date | null {
+    return this._lastLoginAt;
+  }
+
+  get onboardingCompletedAt(): Date | null {
+    return this._onboardingCompletedAt;
+  }
 
   private touch(): void {
-    this.updatedAt = new Date();
+    this._updatedAt = new Date();
   }
 
   static createLocal(params: {
+    id: string;
     name: string;
     email: Email;
     passwordHash: string;
@@ -31,7 +93,7 @@ export class User {
     const now = new Date();
 
     return new User(
-      randomUUID(),
+      params.id,
       params.name,
       params.email,
       params.passwordHash,
@@ -43,10 +105,11 @@ export class User {
       now,
       null,
       null,
-    )
+    );
   }
 
   static createGoogle(params: {
+    id: string;
     name: string;
     email: Email;
     avatarUrl?: string | null;
@@ -54,7 +117,7 @@ export class User {
     const now = new Date();
 
     return new User(
-      randomUUID(),
+      params.id,
       params.name,
       params.email,
       null,
@@ -66,42 +129,42 @@ export class User {
       now,
       null,
       null,
-    )
+    );
   }
 
   updateLastLogin(): void {
-    this.lastLoginAt = new Date();
+    this._lastLoginAt = new Date();
   }
 
   completeOnboarding(): void {
-    if (this.onboardingCompletedAt) return;
+    if (this._onboardingCompletedAt) return;
 
-    this.onboardingCompletedAt = new Date();
+    this._onboardingCompletedAt = new Date();
     this.touch();
   }
 
   rename(name: string): void {
-      this.name = name;
-      this.touch();
+    this._name = name;
+    this.touch();
   }
 
   changeAvatar(url: string | null): void {
-      this.avatarUrl = url;
-      this.touch();
+    this._avatarUrl = url;
+    this.touch();
   }
 
   verifyEmail(): void {
-      this.emailVerified = true;
-      this.touch();
+    this._emailVerified = true;
+    this.touch();
   }
 
-  changePassword(passwordHash: string): void {
-    this.passwordHash = passwordHash;
+  changePassword(passwordHash: string | null): void {
+    this._passwordHash = passwordHash;
     this.touch();
   }
 
   changeRole(role: UserRole): void {
-    this.role = role;
+    this._role = role;
     this.touch();
   }
 }

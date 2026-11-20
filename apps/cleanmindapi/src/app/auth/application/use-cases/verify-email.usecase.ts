@@ -1,47 +1,41 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { VerifyEmailCommand } from "../commands/verify-email.command";
-import { TokenHasherPort } from "../ports/outbound/token-hasher.port";
-import { UserRepository } from "../../../users/domain/repositories/user.repository";
-import { VerificationTokenRepository } from "../../domain/repositories/verification-token.repository";
-import { VerifyEmailPort } from "../ports/inbound/verify-email.port";
+import { Injectable } from '@nestjs/common';
+import { ApplicationError } from '../../../shared/application/errors/application-error';
+import { VerifyEmailCommand } from '../commands/verify-email.command';
+import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
+import { UserRepository } from '../../../users/domain/repositories/user.repository';
+import { VerificationTokenRepository } from '../../domain/repositories/verification-token.repository';
+import { VerifyEmailPort } from '../ports/inbound/verify-email.port';
 
 @Injectable()
-export class VerifyEmailUseCase implements VerifyEmailPort
-{
+export class VerifyEmailUseCase implements VerifyEmailPort {
   constructor(
     private readonly verificationTokenRepository: VerificationTokenRepository,
     private readonly userRepository: UserRepository,
     private readonly tokenHasher: TokenHasherPort,
   ) {}
 
-  async execute(
-    command: VerifyEmailCommand,
-  ): Promise<void> {
-    const tokenHash =
-      await this.tokenHasher.hash(command.code);
+  async execute(command: VerifyEmailCommand): Promise<void> {
+    const tokenHash = await this.tokenHasher.hash(command.code);
 
     const verificationToken =
-      await this.verificationTokenRepository.findByHash(
-        tokenHash,
-      );
+      await this.verificationTokenRepository.findByHash(tokenHash);
 
     if (
       !verificationToken ||
       verificationToken.isExpired ||
       verificationToken.isVerified
     ) {
-      throw new UnauthorizedException(
+      throw new ApplicationError(
+        'AUTH_UNAUTHORIZED',
         'El código no es válido o ya venció.',
       );
     }
 
-    const user =
-      await this.userRepository.findById(
-        verificationToken.userId,
-      );
+    const user = await this.userRepository.findById(verificationToken.userId);
 
     if (!user) {
-      throw new UnauthorizedException(
+      throw new ApplicationError(
+        'AUTH_UNAUTHORIZED',
         'El código no es válido o ya venció.',
       );
     }
@@ -52,8 +46,6 @@ export class VerifyEmailUseCase implements VerifyEmailPort
 
     await this.userRepository.update(user);
 
-    await this.verificationTokenRepository.update(
-      verificationToken,
-    );
+    await this.verificationTokenRepository.update(verificationToken);
   }
 }

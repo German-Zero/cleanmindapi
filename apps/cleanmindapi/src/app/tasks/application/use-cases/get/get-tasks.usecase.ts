@@ -1,19 +1,20 @@
-import { Injectable } from "@nestjs/common";
-import { TaskRepository } from "../../../domain/repositories/task.repository";
-import { GetTasksPort } from "../../ports/inbound/get-tasks.port";
-import { GetTasksCommand } from "../../commands/get-tasks.command";
-import { TaskResponse } from "../../common/responses/task.response";
-import { TaskResponseMapper } from "../../common/mapper/task-response.mapper";
+import { Injectable } from '@nestjs/common';
+import { TaskRepository } from '../../../domain/repositories/task.repository';
+import { GetTasksPort } from '../../ports/inbound/get-tasks.port';
+import { GetTasksQuery } from '../../queries/get-tasks.query';
+import { TaskResponse } from '../../common/responses/task.response';
+import { TaskResponseMapper } from '../../common/mapper/task-response.mapper';
 
 @Injectable()
 export class GetTasksUseCase implements GetTasksPort {
-  constructor(
-    private readonly taskRepository: TaskRepository
-  ) {}
+  constructor(private readonly taskRepository: TaskRepository) {}
 
-  async execute(command: GetTasksCommand): Promise<TaskResponse[]> {
-    const tasks = await this.taskRepository.findAllByUser(command.userId, command.query)
+  async execute(query: GetTasksQuery): Promise<TaskResponse[]> {
+    const tasks = await this.taskRepository.findAllByUser(
+      query.userId,
+      query.query,
+    );
 
-    return TaskResponseMapper.toResponseList(tasks)
+    return TaskResponseMapper.toResponseList(tasks);
   }
 }

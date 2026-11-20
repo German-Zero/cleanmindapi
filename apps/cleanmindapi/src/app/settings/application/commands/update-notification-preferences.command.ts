@@ -1,4 +1,4 @@
-import { NotificationFrequency } from "../../domain/enums/notification-frequency.enum";
+import { NotificationFrequency } from '../../domain/enums/notification-frequency.enum';
 
 export class UpdateNotificationPreferencesCommand {
   constructor(

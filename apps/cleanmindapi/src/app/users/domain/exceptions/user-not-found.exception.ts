@@ -1,7 +1,7 @@
-import { NotFoundException } from "@nestjs/common";
+import { DomainError } from '../../../shared/domain/errors/domain-error';
 
-export class UserNotFoundException extends NotFoundException {
+export class UserNotFoundException extends DomainError {
   constructor() {
-    super('No encontramos el usuario.');
+    super('USER_NOT_FOUND', 'No encontramos el usuario.');
   }
 }

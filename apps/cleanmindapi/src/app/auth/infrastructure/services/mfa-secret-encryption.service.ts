@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import { MfaSecretCipherPort } from '../../application/ports/outbound/mfa-secret-cipher.port';
 
 @Injectable()
-export class MfaSecretEncryptionService {
-  constructor(private readonly config: ConfigService) {}
+export class MfaSecretEncryptionService extends MfaSecretCipherPort {
+  constructor(private readonly config: ConfigService) {
+    super();
+  }
 
   encrypt(value: string): string {
     const iv = randomBytes(12);
@@ -48,7 +51,9 @@ export class MfaSecretEncryptionService {
     const key = Buffer.from(encoded, 'base64');
 
     if (key.length !== 32) {
-      throw new Error('MFA_ENCRYPTION_KEY must be a Base64-encoded 32-byte key');
+      throw new Error(
+        'MFA_ENCRYPTION_KEY must be a Base64-encoded 32-byte key',
+      );
     }
 
     return key;

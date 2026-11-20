@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 
@@ -16,14 +6,14 @@ import { JwtPayload } from '../../../auth/application/common/jwt-payload';
 import { CurrentUser } from '../../../shared/security/decorators/current-user.decorator';
 import { Public } from '../../../shared/security/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../shared/security/guards/jwt-auth.guard';
-import { DiscordConnectionService } from '../../application/services/discord-connection.service';
+import { DiscordConnectionPort } from '../../application/ports/inbound/discord-connection.port';
 import { DiscordOAuthCallbackRequest } from '../requests/discord-oauth-callback.request';
 
 @Controller('notifications/discord')
 @UseGuards(JwtAuthGuard)
 export class DiscordConnectionController {
   constructor(
-    private readonly connections: DiscordConnectionService,
+    private readonly connections: DiscordConnectionPort,
     private readonly config: ConfigService,
   ) {}
 

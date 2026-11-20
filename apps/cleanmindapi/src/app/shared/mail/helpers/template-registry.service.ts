@@ -10,10 +10,7 @@ export class TemplateRegistryService {
   private readonly templatesPath = join(this.mailPath, 'templates');
 
   get(template: MailTemplate): string {
-    return join(
-      this.templatesPath,
-      `${template}.hbs`,
-    );
+    return join(this.templatesPath, `${template}.hbs`);
   }
 
   getLayout(name = 'base'): string {
@@ -35,11 +32,19 @@ export class TemplateRegistryService {
     const candidates = [
       join(__dirname, '..'),
       join(__dirname, 'app', 'shared', 'mail'),
-      join(process.cwd(), 'apps', 'cleanmindapi', 'src', 'app', 'shared', 'mail'),
+      join(
+        process.cwd(),
+        'apps',
+        'cleanmindapi',
+        'src',
+        'app',
+        'shared',
+        'mail',
+      ),
       join(process.cwd(), 'src', 'app', 'shared', 'mail'),
     ];
 
-    const resolved = candidates.find(candidate =>
+    const resolved = candidates.find((candidate) =>
       existsSync(join(candidate, 'layouts', 'base.hbs')),
     );
 

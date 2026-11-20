@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto';
-
 export class PasswordResetToken {
   constructor(
     public readonly id: string,
@@ -11,12 +9,13 @@ export class PasswordResetToken {
   ) {}
 
   static create(params: {
+    id: string;
     tokenHash: string;
     userId: string;
     expiresAt: Date;
   }): PasswordResetToken {
     return new PasswordResetToken(
-      randomUUID(),
+      params.id,
       params.tokenHash,
       params.userId,
       params.expiresAt,

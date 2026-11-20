@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 import { User } from '../../../users/domain/entities/user.entity';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
-import { AuthResponseMapper } from '../../api/mapper/auth-response.mapper';
-import { AuthResponse } from '../../api/response/auth-response';
+import { AuthResponseMapper } from '../common/mappers/auth-response.mapper';
+import { AuthResponse } from '../common/responses/auth-response';
 import { RefreshToken } from '../../domain/entities/refresh-token.entity';
 import { RefreshTokenRepository } from '../../domain/repositories/refresh-token.repository';
 import { JwtPort } from '../ports/outbound/jwt.port';
 import { TokenHasherPort } from '../ports/outbound/token-hasher.port';
 import { AuthenticationMethod } from '../common/authentication-context';
-import { TermsService } from '../../../legal/application/terms.service';
+import { TermsPort } from '../../../legal/application/ports/inbound/terms.port';
 
 @Injectable()
 export class SessionIssuerService {
@@ -18,7 +18,7 @@ export class SessionIssuerService {
     private readonly tokenHasher: TokenHasherPort,
     private readonly refreshTokens: RefreshTokenRepository,
     private readonly users: UserRepository,
-    private readonly terms: TermsService,
+    private readonly terms: TermsPort,
   ) {}
 
   async issue(
@@ -33,13 +33,13 @@ export class SessionIssuerService {
       RefreshToken.create({
         tokenHash,
         userId: user.id,
-        expiresAt: new Date(
-          Date.now() + tokens.refreshTokenExpiresIn * 1000,
-        ),
+        expiresAt: new Date(Date.now() + tokens.refreshTokenExpiresIn * 1000),
       }),
     );
 
-    const requiresTermsAcceptance = await this.terms.requiresAcceptance(user.id);
+    const requiresTermsAcceptance = await this.terms.requiresAcceptance(
+      user.id,
+    );
 
     user.updateLastLogin();
     await this.users.update(user);

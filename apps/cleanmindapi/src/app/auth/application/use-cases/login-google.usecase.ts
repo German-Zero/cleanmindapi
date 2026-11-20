@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 import { UserSettings } from '../../../settings/domain/entities/user-settings.entity';
 import { UserSettingsRepository } from '../../../settings/domain/repositories/user-settings.repository';
 import { User } from '../../../users/domain/entities/user.entity';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { Email } from '../../../users/domain/value-objects/email.vo';
-import { LoginResponse } from '../../api/response/auth-response';
+import { LoginResponse } from '../common/responses/auth-response';
 import { LoginGoogleCommand } from '../commands/login-google.command';
 import { LoginGooglePort } from '../ports/inbound/login-google.port';
 import { MfaService } from '../services/mfa.service';
@@ -29,6 +30,7 @@ export class LoginGoogleUseCase implements LoginGooglePort {
     if (!user) {
       user = await this.betaRegistration.create(
         User.createGoogle({
+          id: randomUUID(),
           name: command.name,
           email,
           avatarUrl: command.avatarUrl,

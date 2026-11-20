@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class ResetPasswordRequest {
   @IsString({ message: 'El enlace de recuperación no es válido.' })

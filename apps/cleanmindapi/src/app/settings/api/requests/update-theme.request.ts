@@ -1,6 +1,6 @@
-import { IsEnum, IsOptional } from "class-validator";
-import { Theme } from "../../domain/enums/theme.enum";
-import { BackgroundMotion } from "../../domain/enums/background-motion.enum";
+import { IsEnum, IsOptional } from 'class-validator';
+import { Theme } from '../../domain/enums/theme.enum';
+import { BackgroundMotion } from '../../domain/enums/background-motion.enum';
 
 export class UpdateThemeRequest {
   @IsEnum(Theme)

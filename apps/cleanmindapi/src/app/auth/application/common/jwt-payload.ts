@@ -1,4 +1,4 @@
-import { UserRole } from "../../../users/domain/enums/user-role.enum";
+import { UserRole } from '../../../users/domain/enums/user-role.enum';
 import { AuthenticationMethod } from './authentication-context';
 
 export interface JwtPayload {
@@ -9,5 +9,5 @@ export interface JwtPayload {
   amr: AuthenticationMethod[];
   iat?: number;
 
-  type: 'access' | 'refresh'
+  type: 'access' | 'refresh';
 }

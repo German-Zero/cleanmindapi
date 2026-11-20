@@ -1,10 +1,8 @@
-
-import { User as PrismaUser } from "@prisma/client";
-import { User } from "../../domain/entities/user.entity";
-import { Email } from "../../domain/value-objects/email.vo";
-import { UserRole } from "../../domain/enums/user-role.enum";
-import { AuthProvider } from "../../domain/enums/auth-provider.enum";
-
+import { User as PrismaUser } from '@prisma/client';
+import { User } from '../../domain/entities/user.entity';
+import { Email } from '../../domain/value-objects/email.vo';
+import { UserRole } from '../../domain/enums/user-role.enum';
+import { AuthProvider } from '../../domain/enums/auth-provider.enum';
 
 export class UserMapper {
   static toDomain(user: PrismaUser): User {
@@ -21,7 +19,7 @@ export class UserMapper {
       user.updatedAt,
       user.lastLoginAt,
       user.onboardingCompletedAt,
-    )
+    );
   }
 
   static toPersistence(user: User) {
@@ -36,6 +34,6 @@ export class UserMapper {
       avatarUrl: user.avatarUrl,
       lastLoginAt: user.lastLoginAt,
       onboardingCompletedAt: user.onboardingCompletedAt,
-    }
+    };
   }
 }

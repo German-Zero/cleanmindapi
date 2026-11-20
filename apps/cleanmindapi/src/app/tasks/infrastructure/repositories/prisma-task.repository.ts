@@ -1,94 +1,84 @@
-import { Injectable } from "@nestjs/common";
-import { TaskRepository } from "../../domain/repositories/task.repository";
-import { PrismaService } from "../../../shared/infrastructure/prisma/prisma.service";
-import { Task } from "../../domain/entities/task.entity";
-import { TaskMapper } from "../mappers/task.mapper";
-import { TaskFilters } from "../../domain/queries/task.query";
+import { Injectable } from '@nestjs/common';
+import { TaskRepository } from '../../domain/repositories/task.repository';
+import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
+import { Task } from '../../domain/entities/task.entity';
+import { TaskMapper } from '../mappers/task.mapper';
+import { TaskFilters } from '../../domain/queries/task.query';
 
 @Injectable()
 export class PrismaTaskRepository implements TaskRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    async create(task: Task): Promise<Task> {
-      const created = await this.prisma.task.create({
-        data: TaskMapper.toCreatePersistence(task),
-      });
+  async create(task: Task): Promise<Task> {
+    const created = await this.prisma.task.create({
+      data: TaskMapper.toCreatePersistence(task),
+    });
 
-      return TaskMapper.toDomain(created);
-    }
+    return TaskMapper.toDomain(created);
+  }
 
-    async update(task: Task): Promise<Task> {
-      const updated = await this.prisma.task.update({
-        where: {
-          id: task.id!,
-        },
-        data: TaskMapper.toUpdatePersistence(task),
-      });
+  async update(task: Task): Promise<Task> {
+    if (!task.id) throw new Error('Cannot update a task without an id.');
 
-      return TaskMapper.toDomain(updated);
-    }
+    const updated = await this.prisma.task.update({
+      where: {
+        id: task.id,
+      },
+      data: TaskMapper.toUpdatePersistence(task),
+    });
 
-    async delete(id: string): Promise<void> {
-      await this.prisma.task.delete({
-        where: {
-          id,
-        },
-      });
-    }
+    return TaskMapper.toDomain(updated);
+  }
 
-    async findById(id: string): Promise<Task | null> {
-      const task = await this.prisma.task.findUnique({
-        where: {
-          id,
-        },
-      });
+  async delete(id: string): Promise<void> {
+    await this.prisma.task.delete({
+      where: {
+        id,
+      },
+    });
+  }
 
-      return task
-        ? TaskMapper.toDomain(task)
-        : null;
-    }
+  async findById(id: string): Promise<Task | null> {
+    const task = await this.prisma.task.findUnique({
+      where: {
+        id,
+      },
+    });
 
-async findAllByUser(
-    userId: string,
-    filters?: TaskFilters,
-): Promise<Task[]> {
+    return task ? TaskMapper.toDomain(task) : null;
+  }
 
-    const tasks =
-        await this.prisma.task.findMany({
-            where: {
-                userId,
-                ...(filters?.status && { status: filters.status }),
-                ...(filters?.quadrant && { quadrant: filters.quadrant }),
-                ...(filters?.dueDate && { dueDate: filters.dueDate }),
-                ...(filters?.search && { OR:
-                  [
-                    { title: { contains: filters.search, mode: 'insensitive' }},
-                    { description: { contains: filters.search, mode: 'insensitive' }},
-                  ],
-                }
-              ),
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-    return tasks.map(task =>
-        TaskMapper.toDomain(task),
-    );
-}
+  async findAllByUser(userId: string, filters?: TaskFilters): Promise<Task[]> {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        userId,
+        ...(filters?.status && { status: filters.status }),
+        ...(filters?.quadrant && { quadrant: filters.quadrant }),
+        ...(filters?.dueDate && { dueDate: filters.dueDate }),
+        ...(filters?.search && {
+          OR: [
+            { title: { contains: filters.search, mode: 'insensitive' } },
+            { description: { contains: filters.search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return tasks.map((task) => TaskMapper.toDomain(task));
+  }
 
-    async existsById(id: string): Promise<boolean> {
-      const task = await this.prisma.task.findUnique({
-        where: {
-          id,
-        },
-        select: {
-          id: true,
-        },
-      });
+  async existsById(id: string): Promise<boolean> {
+    const task = await this.prisma.task.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-      return !!task;
-    }
+    return !!task;
+  }
 }

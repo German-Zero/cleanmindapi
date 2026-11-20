@@ -1,24 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import {
-  PomodoroBreakType as PrismaPomodoroBreakType,
-  PomodoroSession as PrismaPomodoroSession,
-  PomodoroSessionStatus as PrismaPomodoroSessionStatus,
-  Prisma,
-} from '@prisma/client';
+import { PomodoroBreakType as PrismaPomodoroBreakType, PomodoroSession as PrismaPomodoroSession, PomodoroSessionStatus as PrismaPomodoroSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
-import {
-  PomodoroBreakType,
-  PomodoroSession,
-  PomodoroSessionStatus,
-  PomodoroSettings,
-} from '../../domain/models/pomodoro.model';
-import {
-  CreatePomodoroSessionData,
-  FinishPomodoroSessionData,
-  PomodoroRepository,
-  PomodoroSettingsUpdate,
-  UpdatePomodoroPauseData,
-} from '../../domain/repositories/pomodoro.repository';
+import { PomodoroBreakType, PomodoroSession, PomodoroSessionStatus, PomodoroSettings } from '../../domain/models/pomodoro.model';
+import { CreatePomodoroSessionData, FinishPomodoroSessionData, PomodoroRepository, PomodoroSettingsUpdate, UpdatePomodoroPauseData } from '../../domain/repositories/pomodoro.repository';
 
 @Injectable()
 export class PrismaPomodoroRepository implements PomodoroRepository {

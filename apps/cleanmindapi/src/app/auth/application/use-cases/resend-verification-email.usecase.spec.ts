@@ -40,6 +40,7 @@ describe('ResendVerificationEmailUseCase', () => {
 
   it('creates and sends a new code for an unverified user', async () => {
     const user = User.createLocal({
+      id: 'user-1',
       name: 'Clean Mind',
       email: new Email('clean@example.com'),
       passwordHash: 'hash',
@@ -74,6 +75,7 @@ describe('ResendVerificationEmailUseCase', () => {
 
   it('does not send another code when the email is verified', async () => {
     const user = User.createLocal({
+      id: 'user-1',
       name: 'Clean Mind',
       email: new Email('clean@example.com'),
       passwordHash: 'hash',

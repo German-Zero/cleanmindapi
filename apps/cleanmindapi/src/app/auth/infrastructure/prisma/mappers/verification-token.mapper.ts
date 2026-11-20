@@ -1,10 +1,8 @@
-import { VerificationToken } from "../../../domain/entities/verification-token.entity";
-import { VerificationToken as PrismaVerificationToken } from "@prisma/client";
+import { VerificationToken } from '../../../domain/entities/verification-token.entity';
+import { VerificationToken as PrismaVerificationToken } from '@prisma/client';
 
 export class VerificationTokenMapper {
-  static toDomain(
-    prisma: PrismaVerificationToken,
-  ): VerificationToken {
+  static toDomain(prisma: PrismaVerificationToken): VerificationToken {
     return new VerificationToken(
       prisma.id,
       prisma.tokenHash,
@@ -15,9 +13,7 @@ export class VerificationTokenMapper {
     );
   }
 
-  static toPersistence(
-    token: VerificationToken,
-  ) {
+  static toPersistence(token: VerificationToken) {
     return {
       id: token.id,
       tokenHash: token.tokenHash,

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { UserNotFoundException } from '../../../users/domain/exceptions/user-not-found.exception';
 import { VerificationToken } from '../../domain/entities/verification-token.entity';
@@ -36,6 +37,7 @@ export class ResendVerificationEmailUseCase
     const code = this.tokenGenerator.generate();
     const tokenHash = await this.tokenHasher.hash(code);
     const verificationToken = VerificationToken.create({
+      id: randomUUID(),
       tokenHash,
       userId: user.id,
       expiresAt: new Date(

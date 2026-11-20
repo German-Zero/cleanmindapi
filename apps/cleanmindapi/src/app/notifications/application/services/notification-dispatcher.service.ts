@@ -21,32 +21,35 @@ export class NotificationDispatcherService {
 
     if (!settings) return false;
 
-    const enabledChannels: NotificationChannel[] = [];
-
-    if (settings.emailNotifications)
-      enabledChannels.push(NotificationChannel.EMAIL);
-
-    if (settings.whatsappNotifications)
-      enabledChannels.push(NotificationChannel.WHATSAPP);
-
-    if (settings.discordNotifications)
-      enabledChannels.push(NotificationChannel.DISCORD);
-
+    const enabledChannels: NotificationChannel[] = [
+      settings.emailNotifications ? NotificationChannel.EMAIL : null,
+      settings.whatsappNotifications ? NotificationChannel.WHATSAPP : null,
+      settings.discordNotifications ? NotificationChannel.DISCORD : null,
+    ].filter((item): item is NotificationChannel => item !== null);
     const results = await Promise.all(
-      this.senders
-        .filter((sender) => enabledChannels.includes(sender.channel))
-        .map(async (sender) => {
-          try {
-            await sender.send(userId, notification);
-            return true;
-          } catch (error) {
-            this.logger.error(
-              `failed sending notification through ${sender.channel}`,
-              error instanceof Error ? error.stack : undefined,
-            );
-            return false;
-          }
-        }),
+      enabledChannels.map(async (currentChannel) => {
+        const enabled = {
+          [NotificationChannel.EMAIL]: settings.emailNotifications,
+          [NotificationChannel.WHATSAPP]: settings.whatsappNotifications,
+          [NotificationChannel.DISCORD]: settings.discordNotifications,
+        }[currentChannel];
+        const sender = this.senders.find(
+          (item) => item.channel === currentChannel,
+        );
+
+        if (!enabled || !sender) return false;
+
+        try {
+          await sender.send(userId, notification);
+          return true;
+        } catch (error) {
+          this.logger.error(
+            `failed sending notification through ${sender.channel}`,
+            error instanceof Error ? error.stack : undefined,
+          );
+          return false;
+        }
+      }),
     );
 
     return results.some(Boolean);

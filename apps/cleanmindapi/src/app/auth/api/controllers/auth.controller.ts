@@ -1,219 +1,95 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Patch, Post, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
-import { RegisterRequest } from "../requests/register.request";
-import { RegisterUserCommand } from "../../application/commands/register-user.command";
-import { Public } from "../../../shared/security/decorators/public.decorator";
-import { LoginUserCommand } from "../../application/commands/login-user.command";
-import { LoginRequest } from "../requests/login.request";
-import { RefreshTokenCommand } from "../../application/commands/refresh-token.command";
-import { LogoutCommand } from "../../application/commands/logout.command";
-import { JwtPayload } from "../../application/common/jwt-payload";
-import { CurrentUser } from "../../../shared/security/decorators/current-user.decorator";
-import { CurrentUserMapper } from "../../infrastructure/mappers/current-user.mapper";
-import { VerifyEmailCommand } from "../../application/commands/verify-email.command";
-import { VerifyEmailPort } from "../../application/ports/inbound/verify-email.port";
-import { VerifyEmailRequest } from "../requests/verify-email.request";
-import { ForgotPasswordRequest } from "../requests/forgot-password.request";
-import { ForgotPasswordCommand } from "../../application/commands/forgot-password.command";
-import { ResetPasswordUseCase } from "../../application/use-cases/reset-password.usecase";
-import { GetCurrentUserUseCase } from "../../application/use-cases/get-current-user.usecase";
-import { ForgotPasswordUseCase } from "../../application/use-cases/forgot-password.usecase";
-import { ResetPasswordCommand } from "../../application/commands/reset-password.command";
-import { ResetPasswordRequest } from "../requests/reset-password.request";
-import { GoogleAuthGuard } from "../guards/google-auth.guard";
-import { LoginGoogleCommand } from "../../application/commands/login-google.command";
-import { GoogleUser } from "../../application/common/google-user";
-import { LoginGoogleUseCase } from "../../application/use-cases/login-google.usecase";
-import { CookieService } from "../../../shared/application/services/cookie.service";
-import { Response } from "express";
-import { CurrentRefreshToken } from "../../../shared/security/decorators/current-refresh-token.decorator";
-import { RegisterUserUseCase } from "../../application/use-cases/register-user.usecase";
-import { LoginUserUseCase } from "../../application/use-cases/login-user.usecase";
-import { RefreshTokenUseCase } from "../../application/use-cases/refresh-token.usecase";
-import { LogoutUserUseCase } from "../../application/use-cases/logout-user.usecase";
-import { AuthResponse, LoginResponse } from "../response/auth-response";
-import { CurrentUserResponse } from "../response/current-user.response";
-import { JwtAuthGuard } from "../../../shared/security/guards/jwt-auth.guard";
-import { ChangePasswordUseCase } from "../../application/use-cases/change-password.usecase";
-import { ChangePasswordRequest } from "../requests/change-password.request";
-import { ChangePasswordCommand } from "../../application/commands/change-password.command";
-import { SetPasswordRequest } from "../requests/set-password.request";
-import { SetPasswordCommand } from "../../application/commands/set-password.command";
-import { SetPasswordUseCase } from "../../application/use-cases/set-password.usecase";
-import { MfaService, MfaSetupResponse, MfaStatusResponse } from '../../application/services/mfa.service';
-import { MfaCodeRequest } from '../requests/mfa-code.request';
-import { VerifyMfaLoginRequest } from '../requests/verify-mfa-login.request';
+import { Body, Controller, Get, Header, HttpCode, HttpStatus, Post, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { RegisterRequest } from '../requests/register.request';
+import { RegisterUserCommand } from '../../application/commands/register-user.command';
+import { Public } from '../../../shared/security/decorators/public.decorator';
+import { LoginUserCommand } from '../../application/commands/login-user.command';
+import { LoginRequest } from '../requests/login.request';
+import { RefreshTokenCommand } from '../../application/commands/refresh-token.command';
+import { LogoutCommand } from '../../application/commands/logout.command';
+import { CurrentUser } from '../../../shared/security/decorators/current-user.decorator';
+import { GoogleAuthGuard } from '../guards/google-auth.guard';
+import { LoginGoogleCommand } from '../../application/commands/login-google.command';
+import { GoogleUser } from '../../application/common/google-user';
+import { LoginGooglePort } from '../../application/ports/inbound/login-google.port';
+import { CookieService } from '../services/cookie.service';
+import { Response } from 'express';
+import { CurrentRefreshToken } from '../../../shared/security/decorators/current-refresh-token.decorator';
+import { RegisterUserPort } from '../../application/ports/inbound/register-user.port';
+import { LoginUserPort } from '../../application/ports/inbound/login-user.port';
+import { RefreshTokenPort } from '../../application/ports/inbound/refresh-token.port';
+import { LogoutPort } from '../../application/ports/inbound/logout.port';
+import { LoginResponse, MfaRequiredResponse } from '../../application/common/responses/auth-response';
 import { ConfigService } from '@nestjs/config';
-import { ResendVerificationEmailPort } from "../../application/ports/inbound/resend-verification-email.port";
-import { ResendVerificationEmailCommand } from "../../application/commands/resend-verification-email.command";
-import { DeleteAccountUseCase } from "../../application/use-cases/delete-account.usecase";
-import { CompleteOnboardingUseCase } from '../../application/use-cases/complete-onboarding.usecase';
-import { TermsOptional } from '../../../shared/security/decorators/terms-optional.decorator';
-import {
-  BetaRegistrationException,
-  ClosedBetaRegistrationService,
-} from '../../application/services/closed-beta-registration.service';
-import { RegistrationStatusResponse } from '../response/registration-status.response';
-
+import { BetaRegistrationException } from '../../application/services/closed-beta-registration.service';
+import { RegistrationStatusResponse } from '../../application/common/responses/registration-status.response';
+import { ApplicationError, ApplicationErrorCode } from '../../../shared/application/errors/application-error';
+import { RegistrationStatusPort } from '../../application/ports/inbound/registration-status.port';
+import { PublicAuthRateLimitGuard } from '../guards/public-auth-rate-limit.guard';
+import { AuthApiResponse, AuthApiResponseMapper } from '../mapper/auth-api-response.mapper';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly registerUser: RegisterUserUseCase,
-    private readonly loginUserUseCase: LoginUserUseCase,
-    private readonly refreshToken: RefreshTokenUseCase,
-    private readonly logoutUser: LogoutUserUseCase,
-    private readonly getCurrentUser: GetCurrentUserUseCase,
-    private readonly verifyEmailPort: VerifyEmailPort,
-    private readonly resendVerificationEmailPort: ResendVerificationEmailPort,
-    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
-    private readonly resetPasswordUseCase: ResetPasswordUseCase,
-    private readonly loginGoogleUseCase: LoginGoogleUseCase,
+    private readonly registerUser: RegisterUserPort,
+    private readonly loginUser: LoginUserPort,
+    private readonly refreshToken: RefreshTokenPort,
+    private readonly logoutUser: LogoutPort,
+    private readonly loginGoogle: LoginGooglePort,
     private readonly cookieService: CookieService,
-    private readonly changePasswordUseCase: ChangePasswordUseCase,
-    private readonly setPasswordUseCase: SetPasswordUseCase,
-    private readonly mfaService: MfaService,
     private readonly config: ConfigService,
-    private readonly deleteAccountUseCase: DeleteAccountUseCase,
-    private readonly completeOnboardingUseCase: CompleteOnboardingUseCase,
-    private readonly betaRegistration: ClosedBetaRegistrationService,
+    private readonly registrationStatusPort: RegistrationStatusPort,
   ) {}
 
   @Get('registration-status')
   @Public()
   @Header('Cache-Control', 'no-store')
   registrationStatus(): Promise<RegistrationStatusResponse> {
-    return this.betaRegistration.getStatus();
+    return this.registrationStatusPort.getStatus();
   }
 
   @Post('register')
   @Public()
+  @UseGuards(PublicAuthRateLimitGuard)
   @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() request: RegisterRequest,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
-    const response =
-      await this.registerUser.execute(
-        new RegisterUserCommand(
-          request.name,
-          request.email,
-          request.password,
-          request.acceptedTerms,
-        ),
-      );
-
-    this.cookieService.setAccessToken(
-      res,
-      response.accessToken,
-      response.expiresIn,
-    );
-
-    this.cookieService.setRefreshToken(
-      res,
-      response.refreshToken,
-      response.refreshExpiresIn,
-    );
-
-    return response;
-  }
-
-  @Post('mfa/verify')
-  @Public()
-  @Header('Cache-Control', 'no-store')
-  async verifyMfaLogin(
-    @Body() request: VerifyMfaLoginRequest,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
-    const response = await this.mfaService.verifyLogin(
-      request.challengeToken,
-      request.code,
-    );
-
-    this.cookieService.setAccessToken(
-      res,
-      response.accessToken,
-      response.expiresIn,
-    );
-    this.cookieService.setRefreshToken(
-      res,
-      response.refreshToken,
-      response.refreshExpiresIn,
-    );
-
-    return response;
-  }
-
-  @Get('mfa/status')
-  @UseGuards(JwtAuthGuard)
-  statusMfa(@CurrentUser() user: JwtPayload): Promise<MfaStatusResponse> {
-    return this.mfaService.status(user.sub);
-  }
-
-  @Post('mfa/setup')
-  @UseGuards(JwtAuthGuard)
-  @Header('Cache-Control', 'no-store')
-  setupMfa(@CurrentUser() user: JwtPayload): Promise<MfaSetupResponse> {
-    return this.mfaService.setup(user.sub, user.authTime);
-  }
-
-  @Post('mfa/enable')
-  @UseGuards(JwtAuthGuard)
-  @Header('Cache-Control', 'no-store')
-  async enableMfa(
-    @CurrentUser() user: JwtPayload,
-    @Body() request: MfaCodeRequest,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ recoveryCodes: string[] }> {
-    const result = {
-      recoveryCodes: await this.mfaService.enable(user.sub, request.code),
-    };
-    this.cookieService.clearTokens(res);
-
-    return result;
-  }
-
-  @Post('mfa/disable')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async disableMfa(
-    @CurrentUser() user: JwtPayload,
-    @Body() request: MfaCodeRequest,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
-    await this.mfaService.disable(user.sub, request.code);
-    this.cookieService.clearTokens(res);
-  }
-
-  @Post('mfa/recovery-codes')
-  @UseGuards(JwtAuthGuard)
-  @Header('Cache-Control', 'no-store')
-  async regenerateMfaRecoveryCodes(
-    @CurrentUser() user: JwtPayload,
-    @Body() request: MfaCodeRequest,
-  ): Promise<{ recoveryCodes: string[] }> {
-    return {
-      recoveryCodes: await this.mfaService.regenerateRecoveryCodes(
-        user.sub,
-        request.code,
+  ): Promise<AuthApiResponse> {
+    const response = await this.registerUser.execute(
+      new RegisterUserCommand(
+        request.name,
+        request.email,
+        request.password,
+        request.acceptedTerms,
       ),
-    };
+    );
+
+    this.cookieService.setAccessToken(
+      res,
+      response.accessToken,
+      response.expiresIn,
+    );
+
+    this.cookieService.setRefreshToken(
+      res,
+      response.refreshToken,
+      response.refreshExpiresIn,
+    );
+
+    return AuthApiResponseMapper.toResponse(response);
   }
 
   @Post('login')
   @Public()
+  @UseGuards(PublicAuthRateLimitGuard)
   @Header('Cache-Control', 'no-store')
   async login(
     @Body() request: LoginRequest,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<LoginResponse> {
-
-    const response =
-      await this.loginUserUseCase.execute(
-        new LoginUserCommand(
-          request.email,
-          request.password,
-        ),
-      );
+  ): Promise<AuthApiResponse | MfaRequiredResponse> {
+    const response = await this.loginUser.execute(
+      new LoginUserCommand(request.email, request.password),
+    );
 
     if ('challengeToken' in response) {
       this.cookieService.clearTokens(res);
@@ -232,7 +108,7 @@ export class AuthController {
       response.refreshExpiresIn,
     );
 
-    return response;
+    return AuthApiResponseMapper.toResponse(response);
   }
 
   @Post('refresh')
@@ -241,7 +117,7 @@ export class AuthController {
   async refresh(
     @CurrentRefreshToken() refreshToken: string,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
+  ): Promise<AuthApiResponse> {
     try {
       const response = await this.refreshToken.execute(
         new RefreshTokenCommand(refreshToken),
@@ -259,9 +135,13 @@ export class AuthController {
         response.refreshExpiresIn,
       );
 
-      return response;
+      return AuthApiResponseMapper.toResponse(response);
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      if (
+        error instanceof UnauthorizedException ||
+        (error instanceof ApplicationError &&
+          error.code === ApplicationErrorCode.AUTH_UNAUTHORIZED)
+      ) {
         this.cookieService.clearTokens(res);
       }
       throw error;
@@ -274,115 +154,9 @@ export class AuthController {
     @CurrentRefreshToken() refreshToken: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    await this.logoutUser.execute(
-      new LogoutCommand(refreshToken),
-    );
+    await this.logoutUser.execute(new LogoutCommand(refreshToken));
 
     this.cookieService.clearTokens(res);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @TermsOptional()
-  @Header('Cache-Control', 'no-store')
-  async me(@CurrentUser() user: JwtPayload): Promise<CurrentUserResponse> {
-    const currentUser = await this.getCurrentUser.execute(user.sub);
-    return CurrentUserMapper.toResponse(currentUser);
-  }
-
-  @Delete('account')
-  @UseGuards(JwtAuthGuard)
-  @TermsOptional()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteAccount(
-    @CurrentUser() user: JwtPayload,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
-    await this.deleteAccountUseCase.execute(user.sub);
-    this.cookieService.clearTokens(res);
-  }
-
-  @Patch('onboarding/complete')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async completeOnboarding(@CurrentUser() user: JwtPayload): Promise<void> {
-    await this.completeOnboardingUseCase.execute(user.sub);
-  }
-
-  @Post('verify-email')
-  @Public()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async verifyEmail(@Body() request: VerifyEmailRequest): Promise<void> {
-    await this.verifyEmailPort.execute(new VerifyEmailCommand(request.code));
-  }
-
-  @Post('resend-verification-email')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async resendVerificationEmail(
-    @CurrentUser() user: JwtPayload,
-  ): Promise<void> {
-    await this.resendVerificationEmailPort.execute(
-      new ResendVerificationEmailCommand(user.sub),
-    );
-  }
-
-  @Post('forgot-password')
-  @Public()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async forgotPassword(
-    @Body() request: ForgotPasswordRequest,
-  ): Promise<void> {
-    await this.forgotPasswordUseCase.execute(
-      new ForgotPasswordCommand(
-        request.email,
-      ),
-    );
-  }
-
-  @Post('reset-password')
-  @Public()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async resetPassword(
-    @Body() request: ResetPasswordRequest,
-  ): Promise<void> {
-    await this.resetPasswordUseCase.execute(
-      new ResetPasswordCommand(
-        request.token,
-        request.password,
-      ),
-    );
-  }
-
-  @Patch('change-password')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async changePassword(
-    @CurrentUser() user: JwtPayload,
-    @Body() req: ChangePasswordRequest
-  ): Promise<void> {
-    await this.changePasswordUseCase.execute(
-      new ChangePasswordCommand(
-        user.sub,
-        req.currentPassword,
-        req.newPassword,
-        req.confirmPassword
-      )
-    )
-  }
-
-  @Patch('set-password')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async setPassword(
-    @CurrentUser() user: JwtPayload,
-    @Body() req: SetPasswordRequest,
-  ): Promise<void> {
-    await this.setPasswordUseCase.execute(new SetPasswordCommand(
-      user.sub,
-      req.password,
-      req.confirmPassword,
-    ))
   }
 
   @Get('google')
@@ -400,16 +174,11 @@ export class AuthController {
     @CurrentUser() user: GoogleUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-
     let response: LoginResponse;
 
     try {
-      response = await this.loginGoogleUseCase.execute(
-        new LoginGoogleCommand(
-          user.email,
-          user.name,
-          user.avatarUrl,
-        ),
+      response = await this.loginGoogle.execute(
+        new LoginGoogleCommand(user.email, user.name, user.avatarUrl),
       );
     } catch (error) {
       if (!(error instanceof BetaRegistrationException)) throw error;
@@ -431,7 +200,10 @@ export class AuthController {
         this.config.getOrThrow<string>('auth.frontend.url'),
       );
       loginUrl.searchParams.set('googleMfaChallenge', response.challengeToken);
-      loginUrl.searchParams.set('googleMfaExpiresIn', String(response.expiresIn));
+      loginUrl.searchParams.set(
+        'googleMfaExpiresIn',
+        String(response.expiresIn),
+      );
       res.redirect(HttpStatus.FOUND, loginUrl.toString());
       return;
     }

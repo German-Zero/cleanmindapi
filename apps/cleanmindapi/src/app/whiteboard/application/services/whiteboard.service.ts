@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import {
-  SaveWhiteboardDocument,
-  WHITEBOARD_VERSION,
-  WhiteboardDocument,
-} from '../../domain/models/whiteboard.model';
+import { SaveWhiteboardDocument, WHITEBOARD_VERSION, WhiteboardDocument } from '../../domain/models/whiteboard.model';
 import { WhiteboardRepository } from '../../domain/repositories/whiteboard.repository';
+import { WhiteboardPort } from '../ports/inbound/whiteboard.port';
 
 @Injectable()
-export class WhiteboardService {
+export class WhiteboardService implements WhiteboardPort {
   constructor(private readonly repository: WhiteboardRepository) {}
 
   async get(userId: string): Promise<WhiteboardDocument> {

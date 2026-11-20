@@ -1,28 +1,6 @@
 import { Type } from 'class-transformer';
-import {
-  ArrayMaxSize,
-  ArrayMinSize,
-  Equals,
-  IsArray,
-  IsIn,
-  IsInt,
-  IsDefined,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-  ValidateIf,
-  ValidateNested,
-} from 'class-validator';
-import {
-  SaveWhiteboardDocument,
-  WHITEBOARD_VERSION,
-  WhiteboardElement,
-  WhiteboardPoint,
-} from '../../domain/models/whiteboard.model';
+import { ArrayMaxSize, ArrayMinSize, Equals, IsArray, IsIn, IsInt, IsDefined, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from 'class-validator';
+import { SaveWhiteboardDocument, WHITEBOARD_VERSION, WhiteboardElement, WhiteboardPoint } from '../../domain/models/whiteboard.model';
 
 const SHAPES = ['rectangle', 'circle', 'arrow', 'line'];
 

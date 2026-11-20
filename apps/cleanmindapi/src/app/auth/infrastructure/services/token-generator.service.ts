@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { TokenGeneratorPort } from "../../application/ports/outbound/token-generator.port";
-import { randomBytes, randomInt } from "crypto";
+import { Injectable } from '@nestjs/common';
+import { TokenGeneratorPort } from '../../application/ports/outbound/token-generator.port';
+import { randomBytes, randomInt } from 'crypto';
 
 @Injectable()
 export class TokenGeneratorService implements TokenGeneratorPort {

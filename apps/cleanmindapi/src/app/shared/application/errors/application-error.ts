@@ -1,0 +1,30 @@
+export const ApplicationErrorCode = {
+  AUTH_INVALID_INPUT: 'AUTH_INVALID_INPUT',
+  AUTH_UNAUTHORIZED: 'AUTH_UNAUTHORIZED',
+  AUTH_FORBIDDEN: 'AUTH_FORBIDDEN',
+  AUTH_CONFLICT: 'AUTH_CONFLICT',
+  AUTH_NOT_FOUND: 'AUTH_NOT_FOUND',
+  BETA_REGISTRATION_BLOCKED: 'BETA_REGISTRATION_BLOCKED',
+  TERMS_UNAVAILABLE: 'TERMS_UNAVAILABLE',
+  SETTINGS_NOT_FOUND: 'SETTINGS_NOT_FOUND',
+  POMODORO_INVALID_PERIOD: 'POMODORO_INVALID_PERIOD',
+  POMODORO_SESSION_CONFLICT: 'POMODORO_SESSION_CONFLICT',
+  POMODORO_SESSION_NOT_FOUND: 'POMODORO_SESSION_NOT_FOUND',
+  TASK_NOT_FOUND: 'TASK_NOT_FOUND',
+  DISCORD_UNAUTHORIZED: 'DISCORD_UNAUTHORIZED',
+  DISCORD_CONFLICT: 'DISCORD_CONFLICT',
+  DISCORD_NOT_FOUND: 'DISCORD_NOT_FOUND',
+} as const;
+
+export type ApplicationErrorCode =
+  (typeof ApplicationErrorCode)[keyof typeof ApplicationErrorCode];
+
+export class ApplicationError extends Error {
+  constructor(
+    readonly code: ApplicationErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = new.target.name;
+  }
+}

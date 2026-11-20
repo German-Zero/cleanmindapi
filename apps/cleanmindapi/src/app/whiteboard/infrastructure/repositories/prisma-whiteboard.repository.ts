@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, Whiteboard } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
-import {
-  SaveWhiteboardDocument,
-  WhiteboardDocument,
-  WhiteboardElement,
-} from '../../domain/models/whiteboard.model';
+import { SaveWhiteboardDocument, WhiteboardDocument, WhiteboardElement } from '../../domain/models/whiteboard.model';
 import { WhiteboardRepository } from '../../domain/repositories/whiteboard.repository';
 
 @Injectable()

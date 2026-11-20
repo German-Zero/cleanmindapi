@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto';
-
 export class VerificationToken {
   constructor(
     public readonly id: string,
@@ -11,12 +9,13 @@ export class VerificationToken {
   ) {}
 
   static create(params: {
+    id: string;
     tokenHash: string;
     userId: string;
     expiresAt: Date;
   }): VerificationToken {
     return new VerificationToken(
-      randomUUID(),
+      params.id,
       params.tokenHash,
       params.userId,
       params.expiresAt,

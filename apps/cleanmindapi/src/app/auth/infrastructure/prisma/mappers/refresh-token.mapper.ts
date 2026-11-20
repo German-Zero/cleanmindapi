@@ -1,10 +1,8 @@
-import { RefreshToken as PrismaRefreshToken } from '@prisma/client'
-import { RefreshToken } from "../../../domain/entities/refresh-token.entity";
+import { RefreshToken as PrismaRefreshToken } from '@prisma/client';
+import { RefreshToken } from '../../../domain/entities/refresh-token.entity';
 
 export class RefreshTokenMapper {
-  static toDomain(
-    refreshToken: PrismaRefreshToken,
-  ): RefreshToken {
+  static toDomain(refreshToken: PrismaRefreshToken): RefreshToken {
     return RefreshToken.restore({
       id: refreshToken.id,
       tokenHash: refreshToken.tokenHash,

@@ -1,9 +1,9 @@
-import { TaskResponseMapper } from "../../../../tasks/application/common/mapper/task-response.mapper";
-import { Task } from "../../../../tasks/domain/entities/task.entity";
-import { User } from "../../../../users/domain/entities/user.entity";
-import { UserSettingsResponse } from "../../../../settings/application/common/responses/user-settings.response";
-import { DashboardModel } from "../../../domain/models/dashboard.model";
-import { DashboardResponse } from "../responses/dashboard.response";
+import { TaskResponseMapper } from '../../../../tasks/application/common/mapper/task-response.mapper';
+import { Task } from '../../../../tasks/domain/entities/task.entity';
+import { User } from '../../../../users/domain/entities/user.entity';
+import { UserSettingsResponse } from '../../../../settings/application/common/responses/user-settings.response';
+import { DashboardModel } from '../../../domain/models/dashboard.model';
+import { DashboardResponse } from '../responses/dashboard.response';
 
 export class DashboardResponseMapper {
   static toResponse(
@@ -41,17 +41,11 @@ export class DashboardResponseMapper {
         delete: model.quadrants.delete,
       },
 
-      today: TaskResponseMapper.toResponseList(
-        model.today,
-      ),
+      today: TaskResponseMapper.toResponseList(model.today),
 
-      overdue: TaskResponseMapper.toResponseList(
-        model.overdue,
-      ),
+      overdue: TaskResponseMapper.toResponseList(model.overdue),
 
-      upcoming: TaskResponseMapper.toResponseList(
-        model.upcoming,
-      ),
+      upcoming: TaskResponseMapper.toResponseList(model.upcoming),
 
       pomodoro: model.pomodoro,
     };

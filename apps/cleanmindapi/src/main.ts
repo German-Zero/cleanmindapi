@@ -14,6 +14,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const globalPrefix = 'api';
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.use(cookieParser());
   app.enableCors({
     origin: config.get<string[]>('app.corsOrigins') ?? [],
@@ -29,11 +30,13 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    })
-  )
+    }),
+  );
   const port = config.get<number>('app.port') ?? 3000;
   await app.listen(port);
-  Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
+  Logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
 }
 
 bootstrap();

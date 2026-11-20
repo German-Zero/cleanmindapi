@@ -1,7 +1,7 @@
-import { Global, Module } from "@nestjs/common";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import { JwtModule } from "@nestjs/jwt";
-import { StringValue } from "ms";
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { StringValue } from 'ms';
 
 @Global()
 @Module({
@@ -15,9 +15,7 @@ import { StringValue } from "ms";
         secret: config.get<string>('auth.accessSecret'),
 
         signOptions: {
-          expiresIn: config.get<string>(
-            'auth.accessExpiresIn',
-          ) as StringValue,
+          expiresIn: config.get<string>('auth.accessExpiresIn') as StringValue,
         },
       }),
     }),

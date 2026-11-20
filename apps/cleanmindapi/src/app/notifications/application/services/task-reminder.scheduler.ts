@@ -1,16 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  OnApplicationBootstrap,
-  OnModuleDestroy,
-} from '@nestjs/common';
-import {
-  NotificationFrequency,
-  TaskNotificationKind,
-  TaskStatus,
-} from '@prisma/client';
-
-import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
+import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import { NotificationFrequency } from '../../../settings/domain/enums/notification-frequency.enum';
+import { TaskNotificationKind } from '../../domain/enums/task-notification-kind.enum';
+import { TaskReminderRepository } from '../../domain/repositories/task-reminder.repository';
 import { NotificationFactory } from '../factories/notification.factory';
 import { NotificationDispatcherService } from './notification-dispatcher.service';
 
@@ -73,7 +64,7 @@ export class TaskReminderScheduler
   private running = false;
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly taskReminders: TaskReminderRepository,
     private readonly notifications: NotificationFactory,
     private readonly dispatcher: NotificationDispatcherService,
   ) {}
@@ -93,90 +84,7 @@ export class TaskReminderScheduler
     this.running = true;
 
     try {
-      const maxDueDate = new Date(
-        now.getTime() + (MAX_LOOKAHEAD_DAYS + 1) * DAY_MS,
-      );
-      const tasks = await this.prisma.task.findMany({
-        where: {
-          status: { not: TaskStatus.COMPLETED },
-          dueDate: { not: null, lte: maxDueDate },
-        },
-        include: {
-          user: {
-            select: {
-              email: true,
-              userSettings: true,
-            },
-          },
-          notificationDeliveries: {
-            select: {
-              kind: true,
-              dueDate: true,
-            },
-          },
-        },
-      });
-
-      let delivered = 0;
-
-      for (const task of tasks) {
-        const settings = task.user.userSettings;
-        const dueDate = task.dueDate;
-
-        if (!settings || !dueDate) continue;
-        if (
-          !settings.emailNotifications &&
-          !settings.whatsappNotifications &&
-          !settings.discordNotifications
-        )
-          continue;
-
-        const kind = taskNotificationKind(
-          settings.taskNotificationFrequency,
-          dueDate,
-          now,
-          settings.timezone,
-        );
-
-        if (!kind) continue;
-        if (
-          task.notificationDeliveries.some(
-            (delivery) =>
-              delivery.kind === kind &&
-              delivery.dueDate.getTime() === dueDate.getTime(),
-          )
-        )
-          continue;
-
-        const notification =
-          kind === TaskNotificationKind.OVERDUE
-            ? this.notifications.buildTaskOverdue(
-                task.user.email,
-                task.title,
-                dueDate,
-              )
-            : this.notifications.buildTaskReminder(
-                task.user.email,
-                task.title,
-                dueDate,
-              );
-
-        const sent = await this.dispatcher.send(task.userId, notification);
-        if (!sent) continue;
-
-        await this.prisma.taskNotificationDelivery.create({
-          data: {
-            taskId: task.id,
-            kind,
-            dueDate,
-          },
-        });
-        delivered += 1;
-      }
-
-      if (delivered > 0) {
-        this.logger.log(`${delivered} recordatorio(s) de tareas enviados`);
-      }
+      await this.process(now);
     } catch (error) {
       this.logger.error(
         'No se pudieron procesar los recordatorios de tareas',
@@ -184,6 +92,68 @@ export class TaskReminderScheduler
       );
     } finally {
       this.running = false;
+    }
+  }
+
+  private async process(now: Date): Promise<void> {
+    const maxDueDate = new Date(
+      now.getTime() + (MAX_LOOKAHEAD_DAYS + 1) * DAY_MS,
+    );
+    const tasks = await this.taskReminders.findCandidates(maxDueDate);
+    let delivered = 0;
+
+    for (const task of tasks) {
+      const settings = task.settings;
+      const dueDate = task.dueDate;
+
+      if (!settings) continue;
+      if (
+        !settings.emailNotifications &&
+        !settings.whatsappNotifications &&
+        !settings.discordNotifications
+      )
+        continue;
+
+      const kind = taskNotificationKind(
+        settings.taskNotificationFrequency,
+        dueDate,
+        now,
+        settings.timezone,
+      );
+      if (!kind) continue;
+
+      const notification =
+        kind === TaskNotificationKind.OVERDUE
+          ? this.notifications.buildTaskOverdue(
+              task.recipientEmail,
+              task.title,
+              dueDate,
+            )
+          : this.notifications.buildTaskReminder(
+              task.recipientEmail,
+              task.title,
+              dueDate,
+            );
+      let sent = false;
+      const locked = await this.taskReminders.withSchedulerLock(async () => {
+        const alreadySent = await this.taskReminders.hasDelivery(
+          task.taskId,
+          kind,
+          dueDate,
+        );
+        if (alreadySent) return;
+
+        sent = await this.dispatcher.send(task.userId, notification);
+        if (sent) {
+          await this.taskReminders.recordDelivery(task.taskId, kind, dueDate);
+        }
+      });
+
+      if (locked && sent) delivered += 1;
+    }
+
+    if (delivered > 0) {
+      this.logger.log(`${delivered} recordatorio(s) de tareas enviados`);
     }
   }
 }

@@ -1,5 +1,5 @@
-import { IsBoolean, IsEnum } from "class-validator";
-import { NotificationFrequency } from "../../domain/enums/notification-frequency.enum";
+import { IsBoolean, IsEnum } from 'class-validator';
+import { NotificationFrequency } from '../../domain/enums/notification-frequency.enum';
 
 export class UpdateNotificationPreferencesRequest {
   @IsBoolean()
@@ -12,5 +12,5 @@ export class UpdateNotificationPreferencesRequest {
   discordNotifications!: boolean;
 
   @IsEnum(NotificationFrequency)
-  taskNotificationFrequency!: NotificationFrequency
+  taskNotificationFrequency!: NotificationFrequency;
 }

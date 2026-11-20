@@ -1,33 +1,29 @@
-import { ForbiddenException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApplicationError } from '../../../shared/application/errors/application-error';
 
 import { User } from '../../../users/domain/entities/user.entity';
 import { UserCapacityReachedException } from '../../../users/domain/exceptions/user-capacity-reached.exception';
 import { UserRepository } from '../../../users/domain/repositories/user.repository';
 import { Email } from '../../../users/domain/value-objects/email.vo';
-import { RegistrationStatusResponse } from '../../api/response/registration-status.response';
+import { RegistrationStatusResponse } from '../common/responses/registration-status.response';
+import { RegistrationStatusPort } from '../ports/inbound/registration-status.port';
 
 export type BetaRegistrationBlockReason = 'not-invited' | 'full';
 
-export class BetaRegistrationException extends ForbiddenException {
+export class BetaRegistrationException extends ApplicationError {
   constructor(public readonly reason: BetaRegistrationBlockReason) {
-    const notInvited = reason === 'not-invited';
-
-    super({
-      statusCode: HttpStatus.FORBIDDEN,
-      code: notInvited
-        ? 'BETA_EMAIL_NOT_ALLOWED'
-        : 'BETA_CAPACITY_REACHED',
-      message: notInvited
+    super(
+      'BETA_REGISTRATION_BLOCKED',
+      reason === 'not-invited'
         ? 'Esta beta privada es solo por invitación.'
         : 'El cupo de la beta está completo.',
-      error: 'Registro no disponible',
-    });
+    );
   }
 }
 
 @Injectable()
-export class ClosedBetaRegistrationService {
+export class ClosedBetaRegistrationService implements RegistrationStatusPort {
   private readonly allowedEmails: ReadonlySet<string>;
   private readonly maxUsers: number;
 

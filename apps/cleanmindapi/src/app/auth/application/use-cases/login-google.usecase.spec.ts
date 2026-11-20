@@ -41,6 +41,7 @@ describe('LoginGoogleUseCase closed beta', () => {
 
   it('lets an existing Google user log in without checking registration', async () => {
     const user = User.createGoogle({
+      id: 'user-1',
       name: 'Tester',
       email: new Email('tester@example.com'),
     });
@@ -56,6 +57,7 @@ describe('LoginGoogleUseCase closed beta', () => {
 
   it('uses the closed beta policy before creating a new Google user', async () => {
     const createdUser = User.createGoogle({
+      id: 'user-2',
       name: 'Invited tester',
       email: new Email('invited@example.com'),
     });
@@ -63,11 +65,7 @@ describe('LoginGoogleUseCase closed beta', () => {
     jest.spyOn(betaRegistration, 'create').mockResolvedValue(createdUser);
 
     await useCase.execute(
-      new LoginGoogleCommand(
-        'invited@example.com',
-        'Invited tester',
-        null,
-      ),
+      new LoginGoogleCommand('invited@example.com', 'Invited tester', null),
     );
 
     expect(betaRegistration.create).toHaveBeenCalledTimes(1);
